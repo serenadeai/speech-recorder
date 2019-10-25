@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "dist"
+  }
+}
