@@ -58,13 +58,13 @@ export class SpeechRecorder {
   constructor(options: any = {}) {
     this.options = options;
     this.options.error = this.options.error || null;
-    this.options.framesPerBuffer = this.options.framesPerBuffer || 320;
+    this.options.framesPerBuffer = this.options.framesPerBuffer || 160;
     this.options.highWaterMark = this.options.highWaterMark || 1000000;
-    this.options.leadingPadding = this.options.leadingPadding || 3;
-    this.options.nonSpeakingThreshold = this.options.nonSpeakingThreshold || 3;
+    this.options.leadingPadding = this.options.leadingPadding || 5;
+    this.options.nonSpeakingThreshold = this.options.nonSpeakingThreshold || 15;
     this.options.sampleRate = this.options.sampleRate || 16000;
     this.options.skipInitial = this.options.skipInitial || 0;
-    this.options.trailingPadding = this.options.trailingPadding || 3;
+    this.options.trailingPadding = this.options.trailingPadding || 0;
     this.options.vadLevel = this.options.vadLevel || 3;
 
     this.vad = new VAD(this.options.sampleRate, this.options.vadLevel);
@@ -72,7 +72,6 @@ export class SpeechRecorder {
 
   start(startOptions: any = {}) {
     this.leadingBuffer = [];
-    this.trailingCount = 0;
     this.startDt = Date.now();
 
     this.audioStream = new AudioStream({
@@ -130,8 +129,17 @@ export class SpeechRecorder {
 
       // when we stop speaking, transition to trailing mode
       else if (this.state == SpeakingState.Speaking && !speaking) {
+        this.trailingCount = 0;
+        const trailing = this.options.trailingPadding > 0;
+        let text = "speaking";
+
         if (this.consecutiveNonSpeaking == this.options.nonSpeakingThreshold) {
-          this.state = SpeakingState.Trailing;
+          this.state = trailing ? SpeakingState.Trailing : SpeakingState.Silence;
+          text = trailing ? "trailing" : "final";
+        }
+
+        if (startOptions.onSpeech) {
+          startOptions.onSpeech(audio, text);
         }
 
         this.consecutiveNonSpeaking++;
@@ -140,10 +148,9 @@ export class SpeechRecorder {
       // stream trailing audio, marking the last one
       else if (this.state == SpeakingState.Trailing) {
         let text = "trailing";
-        if (this.trailingCount == this.options.trailingPadding) {
+        if (this.trailingCount == this.options.trailingPadding - 1) {
           text = "final";
           this.state = SpeakingState.Silence;
-          this.trailingCount = 0;
         }
 
         if (startOptions.onSpeech) {

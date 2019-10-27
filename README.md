@@ -2,6 +2,8 @@
 
 speech-recorder is a cross-platform, native [node.js](https://nodejs.org) [addon](http://nodejs.org/api/addons.html) for getting a stream of audio from a device's microphone. Using speech-recorder, you can also get only the audio that corresponds to someone speaking.
 
+This module is used for speech recognition in [Serenade](https://serenade.ai). Serenade enables you to write code through nautral speech, rather than typing.
+
 ## Installation
 
 speech-recorder has been tested on Windows 10, macOS 10.14+, and Ubuntu 18.04+ (and may work on other platforms as well).
@@ -41,7 +43,7 @@ Or, just the speech with:
 
     import { SpeechRecorder } from "speech-recorder";
 
-    const recorder = new SpeechRecorder();
+    const recorder = new SpeechRecorder({ sampleRate: 16000, framesPerBuffer: 320 });
     const writeStream = fs.createWriteStream("audio.raw");
 
     recorder.start({
@@ -52,13 +54,13 @@ Or, just the speech with:
 
 The `SpeechRecorder` constructor supports the following options:
 
--   `error`: callback called on audio stream error.
--   `framesPerBuffer`: the number of audio frames to read at a time.
--   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory.
--   `leadingPadding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block, or the voice activity detector starts too late.
--   `nonSpeakingThreshold`: the number of consecutive frames of non-speech before the current block of speech frames finishes.
--   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000.
--   `trailingPadding`: the number of non-speaking frames to be given to the `onSpeech` callback after speech finishes; this can be useful if you want some silence at the end of each speech block, or the voice activity detector cuts off too early.
+-   `error`: callback called on audio stream error. defaults to `null`.
+-   `framesPerBuffer`: the number of audio frames to read at a time. defaults to `320`.
+-   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory. defaults to `1000000` (1mb).
+-   `leadingPadding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block, or the voice activity detector starts too late. defaults to `3`.
+-   `nonSpeakingThreshold`: the number of consecutive frames of non-speech before the current block of speech frames finishes. defaults to `3`.
+-   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
+-   `trailingPadding`: the number of non-speaking frames to be given to the `onSpeech` callback after speech finishes; this can be useful if you want some silence at the end of each speech block, or the voice activity detector cuts off too early. defaults to `0`.
 
 The `start` method supports the following options:
 
