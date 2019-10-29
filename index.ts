@@ -59,9 +59,9 @@ export class SpeechRecorder {
     this.options = options;
     this.options.error = this.options.error || null;
     this.options.framesPerBuffer = this.options.framesPerBuffer || 160;
-    this.options.highWaterMark = this.options.highWaterMark || 1000000;
+    this.options.highWaterMark = this.options.highWaterMark || 32000;
     this.options.leadingPadding = this.options.leadingPadding || 5;
-    this.options.nonSpeakingThreshold = this.options.nonSpeakingThreshold || 15;
+    this.options.nonSpeakingThreshold = this.options.nonSpeakingThreshold || 22;
     this.options.sampleRate = this.options.sampleRate || 16000;
     this.options.skipInitial = this.options.skipInitial || 0;
     this.options.trailingPadding = this.options.trailingPadding || 0;
