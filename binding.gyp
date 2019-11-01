@@ -9,7 +9,8 @@
         "src/common.cc"
       ],
       "include_dirs": [
-        "<!(node -e \"require('nan')\")", "portaudio/include"
+        "<!(node -e \"require('nan')\")",
+        "portaudio/include"
       ],
       "conditions" : [
         [
@@ -23,7 +24,7 @@
                 '-fexceptions'
               ],
               'OTHER_LDFLAGS': [
-                "-Wl,-rpath,<@(module_root_dir)/build/Release"
+                "-Wl,-rpath,@loader_path/"
               ]
             },
             "link_settings": {
@@ -35,7 +36,7 @@
               {
                 "destination": "build/Release/",
                 "files": [
-                  "<!@(ls -1 portaudio/bin/libportaudio.dylib)"
+                  "portaudio/bin/libportaudio.dylib"
                 ]
               }
             ]
@@ -88,14 +89,14 @@
                   }
                 ]
               },
-              { # ia32 or x64
+              {
                 "link_settings": {
                   "libraries": [
                     "<@(module_root_dir)/build/Release/libportaudio.so.2"
                   ],
                   "ldflags": [
-                  "-L<@(module_root_dir)/build/Release",
-                  "-Wl,-rpath,<@(module_root_dir)/build/Release"
+                    "-L<@(module_root_dir)/build/Release",
+                    "-Wl,-rpath,'$$ORIGIN/'"
                   ]
                 },
                 "copies": [
