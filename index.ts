@@ -4,11 +4,10 @@ import { Readable } from "stream";
 import VAD from "webrtcvad";
 const portAudioBindings = bindings("portaudio.node");
 
-enum SpeakingState {
-  Silence,
-  Speaking,
-  Trailing
-}
+export type Trigger = {
+  id: string;
+  threshold: number;
+};
 
 class AudioStream extends Readable {
   private audio: any;
@@ -47,123 +46,118 @@ class AudioStream extends Readable {
 
 export class SpeechRecorder {
   private audioStream?: AudioStream;
-  private consecutiveNonSpeaking = 0;
+  private consecutiveSilence: number = 0;
+  private error: null | ((e: any) => void);
+  private framesPerBuffer: number;
+  private highWaterMark: number;
   private leadingBuffer: Buffer[] = [];
-  private options: any;
-  private startDt = 0;
-  private state: SpeakingState = SpeakingState.Silence;
-  private trailingCount = 0;
+  private padding: number;
+  private results: boolean[] = [];
+  private sampleRate: number;
+  private silence: number;
+  private smoothing: number;
+  private speaking: boolean = false;
+  private triggers: Trigger[] = [];
   private vad: VAD;
 
   constructor(options: any = {}) {
-    this.options = options;
-    this.options.error = this.options.error || null;
-    this.options.framesPerBuffer = this.options.framesPerBuffer || 160;
-    this.options.highWaterMark = this.options.highWaterMark || 32000;
-    this.options.leadingPadding = this.options.leadingPadding || 5;
-    this.options.nonSpeakingThreshold = this.options.nonSpeakingThreshold || 22;
-    this.options.sampleRate = this.options.sampleRate || 16000;
-    this.options.skipInitial = this.options.skipInitial || 0;
-    this.options.trailingPadding = this.options.trailingPadding || 0;
-    this.options.vadLevel = this.options.vadLevel || 3;
+    this.error = options.error || null;
+    this.framesPerBuffer = options.framesPerBuffer || 160;
+    this.highWaterMark = options.highWaterMark || 32000;
+    this.padding = options.padding || 5;
+    this.sampleRate = options.sampleRate || 16000;
+    this.silence = options.silence || 50;
+    this.smoothing = options.smoothing || 2;
+    this.triggers = options.triggers || [];
 
-    this.vad = new VAD(this.options.sampleRate, this.options.vadLevel);
+    this.vad = new VAD(this.sampleRate, options.level || 3);
+  }
+
+  private onData(startOptions: any, audio: any) {
+    if (startOptions.onAudio) {
+      startOptions.onAudio(audio);
+    }
+
+    // keep in memory results for the maximum window size across all thresholds
+    const speaking = this.vad.process(audio);
+    this.results.push(speaking);
+    while (this.results.length > this.smoothing) {
+      this.results.shift();
+    }
+
+    // we haven't detected any speech yet
+    if (!this.speaking) {
+      // keep frames before speaking in a buffer
+      this.leadingBuffer.push(audio);
+
+      // we're speaking if we have smoothing number of speaking frames
+      if (this.results.length == this.smoothing && this.results.every(e => e)) {
+        // if we're now speaking, then flush the buffer and change state
+        for (const data of this.leadingBuffer) {
+          if (startOptions.onSpeech) {
+            startOptions.onSpeech(data);
+          }
+        }
+
+        this.speaking = true;
+        this.leadingBuffer = [];
+        this.consecutiveSilence = 0;
+      }
+
+      // we're still not speaking, so trim the buffer to its specified size
+      else {
+        while (this.leadingBuffer.length > this.padding) {
+          this.leadingBuffer.shift();
+        }
+      }
+    }
+
+    // we're in speaking mode (though the current frame might not be speech)
+    else {
+      // stream all speech audio
+      if (startOptions.onSpeech) {
+        startOptions.onSpeech(audio);
+      }
+
+      // if all of the results are speech, then reset the consecutive silence counter
+      if (!speaking) {
+        this.consecutiveSilence++;
+      } else if (this.results.length == this.smoothing && this.results.every(e => e)) {
+        this.consecutiveSilence = 0;
+      }
+
+      for (const trigger of this.triggers) {
+        if (this.consecutiveSilence == trigger.threshold) {
+          startOptions.onTrigger(trigger);
+        }
+      }
+
+      if (this.consecutiveSilence == this.silence) {
+        this.speaking = false;
+      }
+    }
   }
 
   start(startOptions: any = {}) {
     this.leadingBuffer = [];
-    this.startDt = Date.now();
 
     this.audioStream = new AudioStream({
       channelCount: 1,
       deviceId: startOptions.deviceId || -1,
-      error: this.options.error,
-      highWaterMark: this.options.highWaterMark,
-      framesPerBuffer: this.options.framesPerBuffer,
+      error: this.error,
+      highWaterMark: this.highWaterMark,
+      framesPerBuffer: this.framesPerBuffer,
       sampleFormat: 16,
-      sampleRate: this.options.sampleRate
+      sampleRate: this.sampleRate
     });
 
-    this.audioStream.on("data", (e: any) => {
-      if (Date.now() - this.startDt < this.options.skipInitial) {
-        return;
-      }
-
-      const audio = e;
-      if (startOptions.onAudio) {
-        startOptions.onAudio(audio);
-      }
-
-      const speaking = this.vad.process(audio);
-
-      // add to the leading buffer, making sure it doesn't grow past the maximum size
-      if (this.state == SpeakingState.Silence && !speaking) {
-        this.leadingBuffer.push(audio);
-        while (this.leadingBuffer.length > this.options.leadingPadding) {
-          this.leadingBuffer.shift();
-        }
-      }
-
-      // when we transition from silence to speaking, flush the leading buffer
-      else if (this.state == SpeakingState.Silence && speaking) {
-        for (const data of this.leadingBuffer) {
-          if (startOptions.onSpeech) {
-            startOptions.onSpeech(data, "leading");
-          }
-        }
-
-        this.state = SpeakingState.Speaking;
-        this.leadingBuffer = [];
-        if (startOptions.onSpeech) {
-          startOptions.onSpeech(audio, "speaking");
-        }
-      }
-
-      // stream continuously when speaking
-      else if (this.state == SpeakingState.Speaking && speaking) {
-        this.consecutiveNonSpeaking = 0;
-        if (startOptions.onSpeech) {
-          startOptions.onSpeech(audio, "speaking");
-        }
-      }
-
-      // when we stop speaking, transition to trailing mode
-      else if (this.state == SpeakingState.Speaking && !speaking) {
-        this.trailingCount = 0;
-        const trailing = this.options.trailingPadding > 0;
-        let text = "speaking";
-
-        if (this.consecutiveNonSpeaking == this.options.nonSpeakingThreshold) {
-          this.state = trailing ? SpeakingState.Trailing : SpeakingState.Silence;
-          text = trailing ? "trailing" : "final";
-        }
-
-        if (startOptions.onSpeech) {
-          startOptions.onSpeech(audio, text);
-        }
-
-        this.consecutiveNonSpeaking++;
-      }
-
-      // stream trailing audio, marking the last one
-      else if (this.state == SpeakingState.Trailing) {
-        let text = "trailing";
-        if (this.trailingCount == this.options.trailingPadding - 1) {
-          text = "final";
-          this.state = SpeakingState.Silence;
-        }
-
-        if (startOptions.onSpeech) {
-          startOptions.onSpeech(audio, text);
-        }
-
-        this.trailingCount++;
-      }
+    this.audioStream.on("data", (audio: any) => {
+      this.onData(startOptions, audio);
     });
 
     this.audioStream.on("error", (error: any) => {
-      if (this.options.error) {
-        this.options.error(error);
+      if (this.error) {
+        this.error(error);
       }
     });
 

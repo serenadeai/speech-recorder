@@ -52,21 +52,26 @@ Or, just the speech with:
       }
     });
 
+As you can see, `onSpeech` will be called whenever speech is detected, and `onAudio` will be called regardless (i.e., on every frame).
+
 The `SpeechRecorder` constructor supports the following options:
 
 -   `error`: callback called on audio stream error. defaults to `null`.
--   `framesPerBuffer`: the number of audio frames to read at a time. defaults to `320`.
--   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory. defaults to `1000000` (1mb).
--   `leadingPadding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block, or the voice activity detector starts too late. defaults to `3`.
--   `nonSpeakingThreshold`: the number of consecutive frames of non-speech before the current block of speech frames finishes. defaults to `3`.
+-   `framesPerBuffer`: the number of audio frames to read at a time. defaults to `160`.
+-   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory. defaults to `32000` (32kb).
+-   `level`: the VAD aggressiveness level on a scale of 0-3, with 0 being the least aggressive and 3 being the most aggressive.
+-   `padding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block. defaults to `5`.
 -   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
--   `trailingPadding`: the number of non-speaking frames to be given to the `onSpeech` callback after speech finishes; this can be useful if you want some silence at the end of each speech block, or the voice activity detector cuts off too early. defaults to `0`.
+-   `silence`: the number of consecutive non-speaking frames before silence is detected (taking into account the `smoothing` factor).
+-   `smoothing`: the number of consecutive frames of the same type before making a transition. for instance, if `smoothing` is `2`, then a single frame will not be counted as speech; only when `2` consecutive speech frames are detected will speech be detected. defaults to `2`.
+-   `triggers`: a list of `Trigger` objects that can optionally specify when the `onTrigger` callback is executed.
 
 The `start` method supports the following options:
 
 -   `deviceId`: `id` value from `getDevices` corresponding to the device you want to use; a value of `-1` uses the default device.
 -   `onAudio`: a callback to be executed for all frames of audio data.
 -   `onSpeech`: a callback to be executed only for speaking frames of audio data.
+-   `onTrigger`: a callback to be executed when a trigger threshold is met.
 
 ### Examples
 
