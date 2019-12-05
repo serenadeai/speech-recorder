@@ -64,7 +64,7 @@ export class SpeechRecorder {
     this.error = options.error || null;
     this.framesPerBuffer = options.framesPerBuffer || 160;
     this.highWaterMark = options.highWaterMark || 32000;
-    this.padding = options.padding || 5;
+    this.padding = options.padding || 10;
     this.sampleRate = options.sampleRate || 16000;
     this.silence = options.silence || 50;
     this.smoothing = options.smoothing || 2;
@@ -114,11 +114,6 @@ export class SpeechRecorder {
 
     // we're in speaking mode (though the current frame might not be speech)
     else {
-      // stream all speech audio
-      if (startOptions.onSpeech) {
-        startOptions.onSpeech(audio);
-      }
-
       // if all of the results are speech, then reset the consecutive silence counter
       if (!speaking) {
         this.consecutiveSilence++;
@@ -130,6 +125,11 @@ export class SpeechRecorder {
         if (this.consecutiveSilence == trigger.threshold) {
           startOptions.onTrigger(trigger);
         }
+      }
+
+      // stream all speech audio
+      if (startOptions.onSpeech) {
+        startOptions.onSpeech(audio);
       }
 
       if (this.consecutiveSilence == this.silence) {
