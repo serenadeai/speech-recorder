@@ -63,7 +63,7 @@ export class SpeechRecorder {
   constructor(options: any = {}) {
     this.error = options.error || null;
     this.framesPerBuffer = options.framesPerBuffer || 160;
-    this.highWaterMark = options.highWaterMark || 32000;
+    this.highWaterMark = options.highWaterMark || 64000;
     this.padding = options.padding || 10;
     this.sampleRate = options.sampleRate || 16000;
     this.silence = options.silence || 50;
@@ -74,15 +74,25 @@ export class SpeechRecorder {
   }
 
   private onData(startOptions: any, audio: any) {
-    if (startOptions.onAudio) {
-      startOptions.onAudio(audio);
-    }
-
     // keep in memory results for the maximum window size across all thresholds
     const speaking = this.vad.process(audio);
     this.results.push(speaking);
     while (this.results.length > this.smoothing) {
       this.results.shift();
+    }
+
+    // we're only speaking if all samples in the smoothing window are true
+    const smoothedSpeaking = this.results.length == this.smoothing && this.results.every(e => e);
+    if (smoothedSpeaking) {
+      this.consecutiveSilence = 0;
+    } else {
+      this.consecutiveSilence++;
+    }
+
+    for (const trigger of this.triggers) {
+      if (this.consecutiveSilence == trigger.threshold) {
+        startOptions.onTrigger(trigger);
+      }
     }
 
     // we haven't detected any speech yet
@@ -91,7 +101,7 @@ export class SpeechRecorder {
       this.leadingBuffer.push(audio);
 
       // we're speaking if we have smoothing number of speaking frames
-      if (this.results.length == this.smoothing && this.results.every(e => e)) {
+      if (smoothedSpeaking) {
         // if we're now speaking, then flush the buffer and change state
         for (const data of this.leadingBuffer) {
           if (startOptions.onSpeech) {
@@ -101,7 +111,6 @@ export class SpeechRecorder {
 
         this.speaking = true;
         this.leadingBuffer = [];
-        this.consecutiveSilence = 0;
       }
 
       // we're still not speaking, so trim the buffer to its specified size
@@ -114,19 +123,6 @@ export class SpeechRecorder {
 
     // we're in speaking mode (though the current frame might not be speech)
     else {
-      // if all of the results are speech, then reset the consecutive silence counter
-      if (!speaking) {
-        this.consecutiveSilence++;
-      } else if (this.results.length == this.smoothing && this.results.every(e => e)) {
-        this.consecutiveSilence = 0;
-      }
-
-      for (const trigger of this.triggers) {
-        if (this.consecutiveSilence == trigger.threshold) {
-          startOptions.onTrigger(trigger);
-        }
-      }
-
       // stream all speech audio
       if (startOptions.onSpeech) {
         startOptions.onSpeech(audio);
@@ -135,6 +131,10 @@ export class SpeechRecorder {
       if (this.consecutiveSilence == this.silence) {
         this.speaking = false;
       }
+    }
+
+    if (startOptions.onAudio) {
+      startOptions.onAudio(audio, this.speaking);
     }
   }
 
