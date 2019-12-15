@@ -45,6 +45,7 @@ class AudioStream extends Readable {
 }
 
 export class SpeechRecorder {
+  private audioStarted = false;
   private audioStream?: AudioStream;
   private consecutiveSilence: number = 0;
   private error: null | ((e: any) => void);
@@ -55,8 +56,10 @@ export class SpeechRecorder {
   private results: boolean[] = [];
   private sampleRate: number;
   private silence: number;
+  private skip: number;
   private smoothing: number;
   private speaking: boolean = false;
+  private totalFrames: number = 0;
   private triggers: Trigger[] = [];
   private vad: VAD;
 
@@ -67,6 +70,7 @@ export class SpeechRecorder {
     this.padding = options.padding || 10;
     this.sampleRate = options.sampleRate || 16000;
     this.silence = options.silence || 50;
+    this.skip = options.skip || 10;
     this.smoothing = options.smoothing || 2;
     this.triggers = options.triggers || [];
 
@@ -81,16 +85,24 @@ export class SpeechRecorder {
       this.results.shift();
     }
 
+    if (this.totalFrames <= this.skip) {
+      this.totalFrames++;
+    }
+
     // we're only speaking if all samples in the smoothing window are true
-    const smoothedSpeaking = this.results.length == this.smoothing && this.results.every(e => e);
+    const smoothedSpeaking =
+      this.totalFrames > this.skip &&
+      this.results.length == this.smoothing &&
+      this.results.every(e => e);
     if (smoothedSpeaking) {
       this.consecutiveSilence = 0;
+      this.audioStarted = true;
     } else {
       this.consecutiveSilence++;
     }
 
     for (const trigger of this.triggers) {
-      if (this.consecutiveSilence == trigger.threshold) {
+      if (this.audioStarted && this.consecutiveSilence == trigger.threshold) {
         startOptions.onTrigger(trigger);
       }
     }
