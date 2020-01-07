@@ -2,6 +2,7 @@ import bindings from "bindings";
 import * as os from "os";
 import { Readable } from "stream";
 import VAD from "webrtcvad";
+import uuid from "uuid/v4";
 const portAudioBindings = bindings("portaudio.node");
 
 export type Trigger = {
@@ -47,6 +48,7 @@ class AudioStream extends Readable {
 export class SpeechRecorder {
   private audioStarted = false;
   private audioStream?: AudioStream;
+  private chunk: string = "";
   private consecutiveSilence: number = 0;
   private error: null | ((e: any) => void);
   private framesPerBuffer: number;
@@ -75,6 +77,7 @@ export class SpeechRecorder {
     this.triggers = options.triggers || [];
 
     this.vad = new VAD(this.sampleRate, options.level || 3);
+    this.chunk = uuid();
   }
 
   private onData(startOptions: any, audio: any) {
@@ -101,12 +104,6 @@ export class SpeechRecorder {
       this.consecutiveSilence++;
     }
 
-    for (const trigger of this.triggers) {
-      if (this.audioStarted && this.consecutiveSilence == trigger.threshold) {
-        startOptions.onTrigger(trigger);
-      }
-    }
-
     // we haven't detected any speech yet
     if (!this.speaking) {
       // keep frames before speaking in a buffer
@@ -115,13 +112,15 @@ export class SpeechRecorder {
       // we're speaking if we have smoothing number of speaking frames
       if (smoothedSpeaking) {
         // if we're now speaking, then flush the buffer and change state
+        this.speaking = true;
+        this.chunk = uuid();
+
         for (const data of this.leadingBuffer) {
           if (startOptions.onSpeech) {
-            startOptions.onSpeech(data);
+            startOptions.onSpeech(data, this.chunk);
           }
         }
 
-        this.speaking = true;
         this.leadingBuffer = [];
       }
 
@@ -137,7 +136,7 @@ export class SpeechRecorder {
     else {
       // stream all speech audio
       if (startOptions.onSpeech) {
-        startOptions.onSpeech(audio);
+        startOptions.onSpeech(audio, this.chunk);
       }
 
       if (this.consecutiveSilence == this.silence) {
@@ -146,7 +145,13 @@ export class SpeechRecorder {
     }
 
     if (startOptions.onAudio) {
-      startOptions.onAudio(audio, this.speaking);
+      startOptions.onAudio(audio, this.speaking, speaking);
+    }
+
+    for (const trigger of this.triggers) {
+      if (this.audioStarted && this.consecutiveSilence == trigger.threshold) {
+        startOptions.onTrigger(trigger);
+      }
     }
   }
 

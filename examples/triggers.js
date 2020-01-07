@@ -3,19 +3,20 @@ const { SpeechRecorder } = require("../dist/index");
 
 console.log("Recording...");
 const recorder = new SpeechRecorder({
+  padding: 20,
   silence: 50,
   triggers: [
     {
-      id: "before",
-      threshold: 15
+      id: "one",
+      threshold: 20
     },
     {
-      id: "at",
+      id: "two",
       threshold: 50
     },
     {
-      id: "after",
-      threshold: 80
+      id: "three",
+      threshold: 100
     }
   ]
 });

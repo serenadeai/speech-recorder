@@ -47,7 +47,7 @@ Or, just the speech with:
     const writeStream = fs.createWriteStream("audio.raw");
 
     recorder.start({
-      onSpeech: (audio) => {
+      onSpeech: (audio, chunk) => {
         writeStream.write(audio);
       }
     });
