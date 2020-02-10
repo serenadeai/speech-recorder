@@ -60,7 +60,7 @@ The `SpeechRecorder` constructor supports the following options:
 -   `framesPerBuffer`: the number of audio frames to read at a time. defaults to `160`.
 -   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory. defaults to `32000` (32kb).
 -   `level`: the VAD aggressiveness level on a scale of 0-3, with 0 being the least aggressive and 3 being the most aggressive.
--   `padding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block. defaults to `5`.
+-   `padding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block. defaults to `10`.
 -   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
 -   `silence`: the number of consecutive non-speaking frames before silence is detected (taking into account the `smoothing` factor).
 -   `smoothing`: the number of consecutive frames of the same type before making a transition. for instance, if `smoothing` is `2`, then a single frame will not be counted as speech; only when `2` consecutive speech frames are detected will speech be detected. defaults to `2`.

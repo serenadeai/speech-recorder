@@ -13,6 +13,7 @@ describe('SpeechRecorder', function() {
     describe('SpeechRecorder', function() {
         it('Detects speech starting and ending with correct buffer counting', function() {
             const recorder = new SpeechRecorder({
+                padding: 1,
                 silence: 3,
                 skip: 1,
                 smoothing: 2,
@@ -35,6 +36,7 @@ describe('SpeechRecorder', function() {
             sendFrame(true);
             assert.strictEqual(recorder.speaking, false);
             assert.deepEqual(recorder.results, [true]);
+            assert.strictEqual(onSpeechCallbackCount, 0);
 
             sendFrame(true);
             assert.strictEqual(recorder.speaking, true);
@@ -69,6 +71,20 @@ describe('SpeechRecorder', function() {
             assert.strictEqual(recorder.speaking, false);
             assert.deepEqual(recorder.results, [false, false]);
             assert.strictEqual(onSpeechCallbackCount, 6);
+
+            // Needs 2 consecutive speech frames to be in speaking mode
+            sendFrame(true);
+            assert.strictEqual(recorder.speaking, false);
+            assert.deepEqual(recorder.results, [false, true]);
+            assert.strictEqual(onSpeechCallbackCount, 6);
+
+            sendFrame(true);
+            assert.strictEqual(recorder.speaking, true);
+            assert.deepEqual(recorder.results, [true, true]);
+
+            console.log(recorder.leadingBuffer);
+            // Both frames should be pushed
+            assert.strictEqual(onSpeechCallbackCount, 8);
         });
     });
 });
