@@ -67,6 +67,8 @@ export class SpeechRecorder {
 
   constructor(options: any = {}) {
     this.error = options.error || null;
+
+    // TODO: Warning: values of 0 here will evaluate to the defaults!
     this.framesPerBuffer = options.framesPerBuffer || 160;
     this.highWaterMark = options.highWaterMark || 64000;
     this.padding = options.padding || 10;

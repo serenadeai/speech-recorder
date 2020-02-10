@@ -2,7 +2,7 @@
 
 speech-recorder is a cross-platform, native [node.js](https://nodejs.org) [addon](http://nodejs.org/api/addons.html) for getting a stream of audio from a device's microphone. Using speech-recorder, you can also get only the audio that corresponds to someone speaking.
 
-This module is used for speech recognition in [Serenade](https://serenade.ai). Serenade enables you to write code through nautral speech, rather than typing.
+This module is used for speech recognition in [Serenade](https://serenade.ai). Serenade enables you to write code through natural speech, rather than typing.
 
 ## Installation
 
@@ -64,6 +64,7 @@ The `SpeechRecorder` constructor supports the following options:
 -   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
 -   `silence`: the number of consecutive non-speaking frames before silence is detected (taking into account the `smoothing` factor).
 -   `smoothing`: the number of consecutive frames of the same type before making a transition. for instance, if `smoothing` is `2`, then a single frame will not be counted as speech; only when `2` consecutive speech frames are detected will speech be detected. defaults to `2`.
+-   `skip`: the number of initial frames to skip before considering audio as speech, to allow for initial VAD calibration*__*.
 -   `triggers`: a list of `Trigger` objects that can optionally specify when the `onTrigger` callback is executed.
 
 The `start` method supports the following options:
