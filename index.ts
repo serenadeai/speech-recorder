@@ -3,6 +3,7 @@ import * as os from "os";
 import { Readable } from "stream";
 import VAD from "webrtcvad";
 import uuid from "uuid/v4";
+import { FeatureExtractor } from "./feature-extractor";
 const portAudioBindings = bindings("portaudio.node");
 
 export type Trigger = {
@@ -58,47 +59,37 @@ export class SpeechRecorder {
   private results: boolean[] = [];
   private sampleRate: number;
   private silence: number;
-  private skip: number;
   private smoothing: number;
   private speaking: boolean = false;
-  private totalFrames: number = 0;
   private triggers: Trigger[] = [];
-  private vad: VAD;
+  private extractor: FeatureExtractor;
 
   constructor(options: any = {}) {
     this.error = options.error || null;
-
     // TODO: Warning: values of 0 here will evaluate to the defaults!
-    this.framesPerBuffer = options.framesPerBuffer || 160;
+    this.framesPerBuffer = options.framesPerBuffer || 320;
     this.highWaterMark = options.highWaterMark || 64000;
     this.padding = options.padding || 10;
     this.sampleRate = options.sampleRate || 16000;
     this.silence = options.silence || 50;
-    this.skip = options.skip || 10;
     this.smoothing = options.smoothing || 2;
     this.triggers = options.triggers || [];
 
-    this.vad = new VAD(this.sampleRate, options.level || 3);
     this.chunk = uuid();
+    this.extractor = new FeatureExtractor(this.sampleRate, options.level || 3);
   }
 
   private onData(startOptions: any, audio: any) {
     // keep in memory results for the maximum window size across all thresholds
-    const speaking = this.vad.process(audio);
+    const speaking = this.extractor.vad(audio);
     this.results.push(speaking);
     while (this.results.length > this.smoothing) {
       this.results.shift();
     }
 
-    if (this.totalFrames <= this.skip) {
-      this.totalFrames++;
-    }
-
     // we're only speaking if all samples in the smoothing window are true
-    const smoothedSpeaking =
-      this.totalFrames > this.skip &&
-      this.results.length == this.smoothing &&
-      this.results.every(e => e);
+    const smoothedSpeaking = this.results.length == this.smoothing && this.results.every(e => e);
+
     if (smoothedSpeaking) {
       this.consecutiveSilence = 0;
       this.audioStarted = true;
@@ -141,6 +132,7 @@ export class SpeechRecorder {
         startOptions.onSpeech(audio, this.chunk);
       }
 
+      // we're no longer speaking
       if (this.consecutiveSilence == this.silence) {
         this.speaking = false;
       }
@@ -159,7 +151,6 @@ export class SpeechRecorder {
 
   start(startOptions: any = {}) {
     this.leadingBuffer = [];
-
     this.audioStream = new AudioStream({
       channelCount: 1,
       deviceId: startOptions.deviceId || -1,
