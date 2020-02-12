@@ -62,8 +62,8 @@ The `SpeechRecorder` constructor supports the following options:
 -   `level`: the VAD aggressiveness level on a scale of 0-3, with 0 being the least aggressive and 3 being the most aggressive.
 -   `padding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block. defaults to `10`.
 -   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
--   `silence`: the number of consecutive non-speaking frames before silence is detected (taking into account the `smoothing` factor).
--   `smoothing`: the number of consecutive frames of the same type before making a transition. for instance, if `smoothing` is `2`, then a single frame will not be counted as speech; only when `2` consecutive speech frames are detected will speech be detected. defaults to `2`.
+-   `speakingThreshold`: the number of consecutive speaking frames before speech is detected.
+-   `silenceThreshold`: the number of consecutive non-speaking frames before silence is detected.
 -   `skip`: the number of initial frames to skip before considering audio as speech, to allow for initial VAD calibration*__*.
 -   `triggers`: a list of `Trigger` objects that can optionally specify when the `onTrigger` callback is executed.
 

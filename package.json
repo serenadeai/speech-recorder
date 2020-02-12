@@ -14,7 +14,6 @@
   "repository": "git+https://github.com/serenadeai/speech-recorder.git",
   "dependencies": {
     "bindings": "^1.3.0",
-    "meyda": "^4.3.0",
     "nan": "^2.10.0",
     "uuid": "^3.3.3",
     "webrtcvad": "^1.0.1"
@@ -24,7 +23,7 @@
     "clean": "rm -rf dist",
     "prepare": "tsc",
     "install": "node-gyp rebuild",
-    "test": "tsc; mocha"
+    "test": "tsc ; mocha"
   },
   "devDependencies": {
     "@types/bindings": "^1.3.0",
