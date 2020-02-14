@@ -3,26 +3,28 @@ const { SpeechRecorder } = require("../dist/index");
 
 console.log("Recording...");
 const recorder = new SpeechRecorder({
-  padding: 20,
-  silence: 50,
+  padding: 10,
+  silence: 5,
   triggers: [
     {
       id: "one",
-      threshold: 20
+      threshold: 10
     },
     {
       id: "two",
-      threshold: 50
+      threshold: 25
     },
     {
       id: "three",
-      threshold: 100
+      threshold: 50
     }
   ]
 });
 
 recorder.start({
-  onSpeech: audio => {},
+  onSpeech: audio => {
+    console.log(Date.now(), "speech");
+  },
   onTrigger: trigger => {
     console.log(Date.now(), trigger);
   }

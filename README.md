@@ -63,8 +63,7 @@ The `SpeechRecorder` constructor supports the following options:
 -   `padding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block. defaults to `10`.
 -   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
 -   `speakingThreshold`: the number of consecutive speaking frames before speech is detected.
--   `silenceThreshold`: the number of consecutive non-speaking frames before silence is detected.
--   `skip`: the number of initial frames to skip before considering audio as speech, to allow for initial VAD calibration*__*.
+-   `trailingSilenceThreshold`: the number of consecutive non-speaking frames before silence is detected.
 -   `triggers`: a list of `Trigger` objects that can optionally specify when the `onTrigger` callback is executed.
 
 The `start` method supports the following options:
