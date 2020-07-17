@@ -23,7 +23,7 @@ class Params {
 
   std::string unpackValue(Local<Value> val) {
     Local<Array> valueArray = Local<Array>::Cast(val);
-    return *Nan::Utf8String(valueArray->Get(0));
+    return *Nan::Utf8String(Nan::Get(valueArray, 0).ToLocalChecked());
   }
 
   bool unpackBool(Local<Object> tags, const std::string& key, bool dflt) {
