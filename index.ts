@@ -17,7 +17,7 @@ class AudioStream extends Readable {
   constructor(options: any = {}) {
     super({
       highWaterMark: options.highWaterMark,
-      objectMode: false
+      objectMode: false,
     });
 
     this.audio = new portAudioBindings.AudioIn(options);
@@ -53,10 +53,9 @@ export class SpeechRecorder {
   private consecutiveVADSpeech: number = 0;
   private consecutiveVADNonSpeech: number = 0;
   private error: null | ((e: any) => void);
-  private frame: number = 0;
   private framesPerBuffer: number;
   private highWaterMark: number;
-  private leadingBuffer: { frame: number; audio: Buffer }[] = [];
+  private leadingBuffer: Buffer[] = [];
   private speakingThreshold: number;
   private padding: number;
   private sampleRate: number;
@@ -91,15 +90,14 @@ export class SpeechRecorder {
     }
 
     if (startOptions.onAudio) {
-      startOptions.onAudio(audio, this.speaking, this.frame, speaking);
+      startOptions.onAudio(audio, this.speaking, speaking);
     }
 
     // we haven't detected any speech yet
     if (!this.speaking) {
-      this.consecutiveNonSpeakingState++;
-
       // keep frames before speaking in a buffer
-      this.leadingBuffer.push({ frame: this.frame, audio: Buffer.from(audio) });
+      this.leadingBuffer.push(Buffer.from(audio));
+      this.consecutiveNonSpeakingState++;
 
       // if we're now speaking, then flush the buffer and change state
       if (this.consecutiveVADSpeech >= this.speakingThreshold) {
@@ -107,11 +105,8 @@ export class SpeechRecorder {
         this.speaking = true;
         this.chunk = uuid();
         this.consecutiveNonSpeakingState = 0;
-
-        for (const e of this.leadingBuffer) {
-          if (startOptions.onSpeech) {
-            startOptions.onSpeech(e.audio, this.chunk, e.frame);
-          }
+        if (this.leadingBuffer.length > 0) {
+          startOptions.onSpeech(Buffer.concat(this.leadingBuffer), this.chunk);
         }
 
         this.leadingBuffer = [];
@@ -131,7 +126,7 @@ export class SpeechRecorder {
 
       // stream all speech audio
       if (startOptions.onSpeech) {
-        startOptions.onSpeech(audio, this.chunk, this.frame);
+        startOptions.onSpeech(audio, this.chunk);
       }
 
       // we're no longer speaking
@@ -145,8 +140,6 @@ export class SpeechRecorder {
         startOptions.onTrigger(trigger);
       }
     }
-
-    this.frame++;
   }
 
   start(startOptions: any = {}) {
@@ -158,7 +151,7 @@ export class SpeechRecorder {
       highWaterMark: this.highWaterMark,
       framesPerBuffer: this.framesPerBuffer,
       sampleFormat: 16,
-      sampleRate: this.sampleRate
+      sampleRate: this.sampleRate,
     });
 
     this.audioStream.on("data", (audio: any) => {
