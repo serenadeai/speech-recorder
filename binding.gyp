@@ -34,9 +34,9 @@
             },
             "copies": [
               {
-                "destination": "build/Release/",
+                "destination": "<@(module_root_dir)/build/Release/",
                 "files": [
-                  "portaudio/bin/libportaudio.dylib"
+                  "<@(module_root_dir)/portaudio/bin/libportaudio.dylib"
                 ]
               }
             ]
@@ -55,13 +55,13 @@
               }
             },
             "libraries": [
-               "-l../portaudio/bin/portaudio_x64.lib"
+               "<@(module_root_dir)/portaudio/bin/portaudio_x64.lib"
             ],
             "copies": [
               {
-                "destination": "build/Release",
+                "destination": "<@(module_root_dir)/build/Release",
                 "files": [
-                  "portaudio/bin/portaudio_x64.dll"
+                  "<@(module_root_dir)/portaudio/bin/portaudio_x64.dll"
                 ]
               }
             ]
