@@ -61,7 +61,8 @@
               {
                 "destination": "<(module_root_dir)/build/Release",
                 "files": [
-                  "<(module_root_dir)/portaudio/bin/portaudio_x64.dll"
+                  "<(module_root_dir)/portaudio/bin/portaudio_x64.dll",
+                  "<(module_root_dir)/portaudio/bin/vcruntime140.dll"
                 ]
               }
             ]
