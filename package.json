@@ -1,7 +1,7 @@
 {
   "name": "speech-recorder",
   "author": "Serenade Labs, Inc. <contact@serenade.ai>",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Record speech via PortAudio and WebRTC VAD bindings.",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf build dist 9.1.0 bin *.raw",
     "prepare": "tsc",
     "install": "node-gyp rebuild",
     "test": "tsc ; mocha"
