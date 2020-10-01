@@ -8,24 +8,24 @@ const recorder = new SpeechRecorder({
   triggers: [
     {
       id: "one",
-      threshold: 10
+      threshold: 10,
     },
     {
       id: "two",
-      threshold: 25
+      threshold: 25,
     },
     {
       id: "three",
-      threshold: 50
-    }
-  ]
+      threshold: 50,
+    },
+  ],
 });
 
 recorder.start({
-  onSpeech: audio => {
-    console.log(Date.now(), "speech");
+  onAudio: (audio, speech) => {
+    console.log(Date.now(), "speech =", speech);
   },
-  onTrigger: trigger => {
-    console.log(Date.now(), trigger);
-  }
+  onTrigger: (trigger) => {
+    console.log(Date.now(), "trigger =", trigger);
+  },
 });

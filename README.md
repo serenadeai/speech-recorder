@@ -47,8 +47,10 @@ Or, just the speech with:
     const writeStream = fs.createWriteStream("audio.raw");
 
     recorder.start({
-      onSpeech: (audio, chunk) => {
-        writeStream.write(audio);
+      onAudio: (audio, speech) => {
+        if (speech) {
+          writeStream.write(audio);
+        }
       }
     });
 
@@ -57,20 +59,21 @@ As you can see, `onSpeech` will be called whenever speech is detected, and `onAu
 The `SpeechRecorder` constructor supports the following options:
 
 -   `error`: callback called on audio stream error. defaults to `null`.
--   `framesPerBuffer`: the number of audio frames to read at a time. defaults to `160`.
--   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory. defaults to `32000` (32kb).
--   `level`: the VAD aggressiveness level on a scale of 0-3, with 0 being the least aggressive and 3 being the most aggressive.
--   `padding`: the number of non-speaking frames to be given to the `onSpeech` callback before speech starts; this can be useful if you want some silence at the start of each speech block. defaults to `10`.
+-   `framesPerBuffer`: the number of audio frames to read at a time. defaults to `320`.
+-   `highWaterMark`: the `highWaterMark` to be applied to the underlying stream, or how much audio can be buffered in memory. defaults to `64000` (64kb).
+-   `leadingPadding`: the number of frames to buffer at the start of a speech chunk. this can be prevent audio at the start of the file from getting cut off. defaults to `30`.
+-   `level`: the VAD aggressiveness level on a scale of 0-3, with 0 being the least aggressive and 3 being the most aggressive. defaults to `3`.
 -   `sampleRate`: the sample rate for the audio; must be 8000, 16000, 32000, or 48000. defaults to `16000`.
--   `speakingThreshold`: the number of consecutive speaking frames before speech is detected.
--   `trailingSilenceThreshold`: the number of consecutive non-speaking frames before silence is detected.
+-   `speakingThreshold`: the number of consecutive speaking frames before considering speech to have started.
+-   `silenceThreshold`: the number of consecutive non-speaking frames before considering speech to be finished.
 -   `triggers`: a list of `Trigger` objects that can optionally specify when the `onTrigger` callback is executed.
 
 The `start` method supports the following options:
 
 -   `deviceId`: `id` value from `getDevices` corresponding to the device you want to use; a value of `-1` uses the default device.
--   `onAudio`: a callback to be executed for all frames of audio data.
--   `onSpeech`: a callback to be executed only for speaking frames of audio data.
+-   `onAudio`: a callback to be executed when audio data is received from the mic.
+-   `onChunkStart`: a callback to be executed when a speech chunk starts. will be passed the leading buffer, whose size is determined by `leadingPadding`.
+-   `onChunkEnd`: a callback to be executed when a speech chunk ends.
 -   `onTrigger`: a callback to be executed when a trigger threshold is met.
 
 ### Examples

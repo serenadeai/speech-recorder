@@ -49,94 +49,107 @@ export class SpeechRecorder {
   private audioStarted = false;
   private audioStream?: AudioStream;
   private chunk: string = "";
-  private consecutiveNonSpeakingState: number = 0;
-  private consecutiveVADSpeech: number = 0;
-  private consecutiveVADNonSpeech: number = 0;
-  private error: null | ((e: any) => void);
-  private framesPerBuffer: number;
-  private highWaterMark: number;
+  private consecutiveSpeech: number = 0;
+  private consecutiveSilence: number = 0;
+  private error: null | ((e: any) => void) = null;
+  private framesPerBuffer: number = 320;
+  private highWaterMark: number = 64000;
   private leadingBuffer: Buffer[] = [];
-  private speakingThreshold: number;
-  private padding: number;
-  private sampleRate: number;
+  private leadingPadding: number = 30;
+  private sampleRate: number = 16000;
   private speaking: boolean = false;
-  private trailingSilenceThreshold: number;
+  private speakingThreshold: number = 5;
+  private silenceThreshold: number = 30;
   private triggers: Trigger[] = [];
   private vad: VAD;
 
   constructor(options: any = {}) {
-    this.error = options.error || null;
-    // TODO: Warning: values of 0 here will evaluate to the defaults!
-    this.framesPerBuffer = options.framesPerBuffer || 320;
-    this.highWaterMark = options.highWaterMark || 64000;
-    this.speakingThreshold = options.speakingThreshold || 5;
-    this.padding = options.padding || 10;
-    this.sampleRate = options.sampleRate || 16000;
-    this.trailingSilenceThreshold = options.trailingSilenceThreshold || 5;
-    this.triggers = options.triggers || [];
+    if (options.error) {
+      this.error = options.error;
+    }
 
-    this.chunk = uuid();
+    if (options.framesPerBuffer) {
+      this.framesPerBuffer = options.framesPerBuffer;
+    }
+
+    if (options.highWaterMark) {
+      this.highWaterMark = options.highWaterMark;
+    }
+
+    if (options.leadingPadding) {
+      this.leadingPadding = options.leadingPadding;
+    }
+
+    if (options.sampleRate) {
+      this.sampleRate = options.sampleRate;
+    }
+
+    if (options.silenceThreshold) {
+      this.silenceThreshold = options.silenceThreshold;
+    }
+
+    if (options.speakingThreshold) {
+      this.speakingThreshold = options.speakingThreshold;
+    }
+
+    if (options.triggers) {
+      this.triggers = options.triggers;
+    }
+
     this.vad = new VAD(this.sampleRate, options.level || 3);
   }
 
   onData(startOptions: any, audio: any) {
     const speaking = this.vad.process(audio);
     if (speaking) {
-      this.consecutiveVADNonSpeech = 0;
-      this.consecutiveVADSpeech++;
+      this.consecutiveSilence = 0;
+      this.consecutiveSpeech++;
     } else {
-      this.consecutiveVADNonSpeech++;
-      this.consecutiveVADSpeech = 0;
+      this.consecutiveSilence++;
+      this.consecutiveSpeech = 0;
+    }
+
+    if (!this.speaking) {
+      // keep frames before speaking in a buffer
+      this.leadingBuffer.push(Buffer.from(audio));
+
+      // if we're now speaking, then flush the buffer and change state
+      if (this.consecutiveSpeech >= this.speakingThreshold) {
+        this.audioStarted = true;
+        this.speaking = true;
+        if (this.leadingBuffer.length > 0) {
+          if (startOptions.onChunkStart) {
+            startOptions.onChunkStart(Buffer.concat(this.leadingBuffer));
+          }
+
+          this.leadingBuffer = [];
+        }
+      }
+
+      // we're still not speaking, so trim the buffer to its specified size
+      else {
+        while (this.leadingBuffer.length > this.leadingPadding) {
+          this.leadingBuffer.shift();
+        }
+      }
     }
 
     if (startOptions.onAudio) {
       startOptions.onAudio(audio, this.speaking, speaking);
     }
 
-    // we haven't detected any speech yet
-    if (!this.speaking) {
-      // keep frames before speaking in a buffer
-      this.leadingBuffer.push(Buffer.from(audio));
-      this.consecutiveNonSpeakingState++;
-
-      // if we're now speaking, then flush the buffer and change state
-      if (this.consecutiveVADSpeech >= this.speakingThreshold) {
-        this.audioStarted = true;
-        this.speaking = true;
-        this.chunk = uuid();
-        this.consecutiveNonSpeakingState = 0;
-        if (this.leadingBuffer.length > 0) {
-          startOptions.onSpeech(Buffer.concat(this.leadingBuffer), this.chunk);
-        }
-
-        this.leadingBuffer = [];
-      }
-
-      // we're still not speaking, so trim the buffer to its specified size
-      else {
-        while (this.leadingBuffer.length > this.padding) {
-          this.leadingBuffer.shift();
-        }
-      }
-    }
-
-    // we're in speaking mode (though the current frame might not be speech)
-    else {
-      this.consecutiveNonSpeakingState = 0;
-
-      // stream all speech audio
-      if (startOptions.onSpeech) {
-        startOptions.onSpeech(audio, this.chunk);
-      }
-
+    if (this.speaking) {
       // we're no longer speaking
-      if (this.consecutiveVADNonSpeech == this.trailingSilenceThreshold) {
+      if (this.consecutiveSilence == this.silenceThreshold) {
         this.speaking = false;
+        if (startOptions.onChunkEnd) {
+          startOptions.onChunkEnd();
+        }
       }
     }
 
     for (const trigger of this.triggers) {
-      if (this.audioStarted && this.consecutiveNonSpeakingState == trigger.threshold) {
+      if (this.audioStarted && this.consecutiveSilence == trigger.threshold) {
         startOptions.onTrigger(trigger);
       }
     }
@@ -169,11 +182,8 @@ export class SpeechRecorder {
 
   reset() {
     this.audioStarted = false;
-    this.consecutiveNonSpeakingState = 0;
-    this.consecutiveVADNonSpeech = 0;
-    this.consecutiveVADSpeech = 0;
-    this.speaking = false;
-    this.leadingBuffer = [];
+    this.consecutiveSilence = 0;
+    this.consecutiveSpeech = 0;
   }
 
   stop() {
