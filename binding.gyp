@@ -19,7 +19,7 @@
               'GCC_ENABLE_CPP_RTTI': 'YES',
               'MACOSX_DEPLOYMENT_TARGET': '10.7',
               'OTHER_CPLUSPLUSFLAGS': [
-                '-std=c++11',
+                '-std=c++14',
                 '-stdlib=libc++',
                 '-fexceptions'
               ],
