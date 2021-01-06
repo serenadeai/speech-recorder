@@ -148,9 +148,15 @@ export class SpeechRecorder {
       }
     }
 
+    if (this.audioStarted && this.consecutiveSilence > 0 && startOptions.onConsecutiveSilence) {
+      startOptions.onConsecutiveSilence(this.consecutiveSilence);
+    }
+
     for (const trigger of this.triggers) {
       if (this.audioStarted && this.consecutiveSilence == trigger.threshold) {
-        startOptions.onTrigger(trigger);
+        if (startOptions.onTrigger) {
+          startOptions.onTrigger(trigger);
+        }
       }
     }
   }

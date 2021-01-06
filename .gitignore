@@ -2,7 +2,9 @@ build
 dist
 bin
 node_modules
-9.1.0
+9*
+10*
+11*
 *.log
 *.wav
 *.raw

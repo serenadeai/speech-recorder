@@ -15,32 +15,63 @@
       "conditions" : [
         [
           'OS=="mac"', {
-            'xcode_settings': {
-              'GCC_ENABLE_CPP_RTTI': 'YES',
-              'MACOSX_DEPLOYMENT_TARGET': '10.7',
-              'OTHER_CPLUSPLUSFLAGS': [
-                '-std=c++14',
-                '-stdlib=libc++',
-                '-fexceptions'
-              ],
-              'OTHER_LDFLAGS': [
-                "-Wl,-rpath,@loader_path/"
-              ]
-            },
-            "link_settings": {
-              "libraries": [
-                "<(module_root_dir)/build/Release/libportaudio.dylib"
-              ]
-            },
-            "copies": [
+            "conditions": [
+              ['target_arch=="arm"', {
+                'xcode_settings': {
+                  'GCC_ENABLE_CPP_RTTI': 'YES',
+                  'MACOSX_DEPLOYMENT_TARGET': '11.0',
+                  'OTHER_CPLUSPLUSFLAGS': [
+                    '-std=c++14',
+                    '-stdlib=libc++',
+                    '-fexceptions'
+                  ],
+                  'OTHER_LDFLAGS': [
+                    "-Wl,-rpath,@loader_path/"
+                  ]
+                },
+                "link_settings": {
+                  "libraries": [
+                    "<(module_root_dir)/build/Release/libportaudio_arm64.dylib"
+                  ]
+                },
+                "copies": [
+                  {
+                    "destination": "<(module_root_dir)/build/Release/",
+                    "files": [
+                      "<(module_root_dir)/portaudio/bin/libportaudio_arm64.dylib"
+                    ]
+                  }
+                ]
+              },
               {
-                "destination": "<(module_root_dir)/build/Release/",
-                "files": [
-                  "<(module_root_dir)/portaudio/bin/libportaudio.dylib"
+                'xcode_settings': {
+                  'GCC_ENABLE_CPP_RTTI': 'YES',
+                  'MACOSX_DEPLOYMENT_TARGET': '10.7',
+                  'OTHER_CPLUSPLUSFLAGS': [
+                    '-std=c++14',
+                    '-stdlib=libc++',
+                    '-fexceptions'
+                  ],
+                  'OTHER_LDFLAGS': [
+                    "-Wl,-rpath,@loader_path/"
+                  ]
+                },
+                "link_settings": {
+                  "libraries": [
+                    "<(module_root_dir)/build/Release/libportaudio.dylib"
+                  ]
+                },
+                "copies": [
+                  {
+                    "destination": "<(module_root_dir)/build/Release/",
+                    "files": [
+                      "<(module_root_dir)/portaudio/bin/libportaudio.dylib"
+                    ]
+                  }
                 ]
               }
             ]
-          },
+          ]}
         ],
         [
           'OS=="win"', {
