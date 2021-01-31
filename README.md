@@ -71,7 +71,7 @@ The `SpeechRecorder` constructor supports the following options:
 The `start` method supports the following options:
 
 -   `deviceId`: `id` value from `getDevices` corresponding to the device you want to use; a value of `-1` uses the default device.
--   `onAudio`: a callback to be executed when audio data is received from the mic.
+-   `onAudio`: a callback to be executed when audio data is received from the mic. will be passed `(audio, speaking, speech, volume, silence)`, where `audio` is the buffer of audio data, `speaking` is whether or not we're in the speaking state, `speech` is whether the current frame is speech (recall that consecutive non-speaking frames must be found to exit the speaking state, so `speaking` and `speech` can be different), `volume` is the volume of the audio, and `silence` is the number of consecutive silence frames that have been heard.
 -   `onChunkStart`: a callback to be executed when a speech chunk starts. will be passed the leading buffer, whose size is determined by `leadingPadding`.
 -   `onChunkEnd`: a callback to be executed when a speech chunk ends.
 -   `onTrigger`: a callback to be executed when a trigger threshold is met.

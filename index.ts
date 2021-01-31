@@ -100,7 +100,14 @@ export class SpeechRecorder {
   }
 
   onData(startOptions: any, audio: any) {
-    const speaking = this.vad.process(audio);
+    let sum = 0;
+    for (let i = 0; i < audio.length; i += 2) {
+      sum += Math.pow(audio.readInt16LE(i), 2);
+    }
+
+    // require a minimum (very low) volume threshold as well as a positive VAD result
+    const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
+    const speaking = !!(this.vad.process(audio) && volume > 250);
     if (speaking) {
       this.consecutiveSilence = 0;
       this.consecutiveSpeech++;
@@ -135,7 +142,13 @@ export class SpeechRecorder {
     }
 
     if (startOptions.onAudio) {
-      startOptions.onAudio(audio, this.speaking, speaking);
+      startOptions.onAudio(
+        audio,
+        this.speaking,
+        speaking,
+        volume,
+        this.audioStarted ? this.consecutiveSilence : 0
+      );
     }
 
     if (this.speaking) {
@@ -146,10 +159,6 @@ export class SpeechRecorder {
           startOptions.onChunkEnd();
         }
       }
-    }
-
-    if (this.audioStarted && this.consecutiveSilence > 0 && startOptions.onConsecutiveSilence) {
-      startOptions.onConsecutiveSilence(this.consecutiveSilence);
     }
 
     for (const trigger of this.triggers) {
