@@ -56,6 +56,7 @@ export class SpeechRecorder {
   private highWaterMark: number = 64000;
   private leadingBuffer: Buffer[] = [];
   private leadingPadding: number = 30;
+  private minimumVolume: number = 250;
   private sampleRate: number = 16000;
   private speaking: boolean = false;
   private speakingThreshold: number = 5;
@@ -68,31 +69,35 @@ export class SpeechRecorder {
       this.error = options.error;
     }
 
-    if (options.framesPerBuffer) {
+    if (options.framesPerBuffer !== undefined) {
       this.framesPerBuffer = options.framesPerBuffer;
     }
 
-    if (options.highWaterMark) {
+    if (options.highWaterMark !== undefined) {
       this.highWaterMark = options.highWaterMark;
     }
 
-    if (options.leadingPadding) {
+    if (options.leadingPadding !== undefined) {
       this.leadingPadding = options.leadingPadding;
     }
 
-    if (options.sampleRate) {
+    if (options.minimumVolume !== undefined) {
+      this.minimumVolume = options.minimumVolume;
+    }
+
+    if (options.sampleRate !== undefined) {
       this.sampleRate = options.sampleRate;
     }
 
-    if (options.silenceThreshold) {
+    if (options.silenceThreshold !== undefined) {
       this.silenceThreshold = options.silenceThreshold;
     }
 
-    if (options.speakingThreshold) {
+    if (options.speakingThreshold !== undefined) {
       this.speakingThreshold = options.speakingThreshold;
     }
 
-    if (options.triggers) {
+    if (options.triggers !== undefined) {
       this.triggers = options.triggers;
     }
 
@@ -107,7 +112,7 @@ export class SpeechRecorder {
 
     // require a minimum (very low) volume threshold as well as a positive VAD result
     const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
-    const speaking = !!(this.vad.process(audio) && volume > 250);
+    const speaking = !!(this.vad.process(audio) && volume > this.minimumVolume);
     if (speaking) {
       this.consecutiveSilence = 0;
       this.consecutiveSpeech++;
