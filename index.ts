@@ -89,10 +89,6 @@ export class SpeechRecorder {
       this.minimumVolume = options.minimumVolume;
     }
 
-    if (options.sampleRate !== undefined) {
-      this.sampleRate = options.sampleRate;
-    }
-
     if (options.silenceThreshold !== undefined) {
       this.silenceThreshold = options.silenceThreshold;
     }
@@ -113,7 +109,7 @@ export class SpeechRecorder {
       this.vadThreshold = options.vadThreshold;
     }
 
-    this.webrtcVad = new WebrtcVad(this.sampleRate, options.level || 3);
+    this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 3);
   }
 
   async onData(startOptions: any, audio: any) {
