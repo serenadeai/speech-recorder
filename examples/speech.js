@@ -5,10 +5,16 @@ console.log("Recording...");
 const recorder = new SpeechRecorder();
 const writeStream = fs.createWriteStream("audio.raw");
 recorder.start({
-  onSpeech: (audio, speech) => {
-    console.log(new Date(), audio.length, state);
+  onChunkStart: (leadingBuffer) => {
+    writeStream.write(leadingBuffer);
+  },
+  onAudio: (audio, speech) => {
     if (speech) {
       writeStream.write(audio);
     }
+  },
+  onChunkEnd: () => {
+    writeStream.end();
+    process.exit(0);
   },
 });

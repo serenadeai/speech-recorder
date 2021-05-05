@@ -54,8 +54,6 @@ Or, just the speech with:
       }
     });
 
-As you can see, `onSpeech` will be called whenever speech is detected, and `onAudio` will be called regardless (i.e., on every frame).
-
 The `SpeechRecorder` constructor supports the following options:
 
 -   `error`: callback called on audio stream error. defaults to `null`.
