@@ -9,7 +9,7 @@ export default class SileroVad {
       return;
     }
 
-    this.session = await ort.InferenceSession.create("./model/silero.onnx");
+    this.session = await ort.InferenceSession.create(`${__dirname}/../model/silero.onnx`);
     this.loaded = true;
   }
 
