@@ -1,8 +1,9 @@
 import bindings from "bindings";
 import * as os from "os";
 import { Readable } from "stream";
-import VAD from "webrtcvad";
+import WebrtcVad from "webrtcvad";
 import uuid from "uuid/v4";
+import SileroVad from "./vad";
 const portAudioBindings = bindings("portaudio.node");
 
 export type Trigger = {
@@ -48,23 +49,31 @@ class AudioStream extends Readable {
 export class SpeechRecorder {
   private audioStarted = false;
   private audioStream?: AudioStream;
-  private chunk: string = "";
   private consecutiveSpeech: number = 0;
   private consecutiveSilence: number = 0;
+  private disableSecondPass: boolean = false;
   private error: null | ((e: any) => void) = null;
   private framesPerBuffer: number = 320;
   private highWaterMark: number = 64000;
   private leadingBuffer: Buffer[] = [];
-  private leadingPadding: number = 30;
-  private minimumVolume: number = 250;
+  private leadingPadding: number = 20;
+  private minimumVolume: number = 200;
   private sampleRate: number = 16000;
   private speaking: boolean = false;
-  private speakingThreshold: number = 5;
-  private silenceThreshold: number = 30;
+  private speakingThreshold: number = 1;
+  private silenceThreshold: number = 10;
   private triggers: Trigger[] = [];
-  private vad: VAD;
+  private webrtcVad: WebrtcVad;
+  private vad = new SileroVad();
+  private vadBuffer: number[][] = [];
+  private vadBufferSize: number = 10;
+  private vadThreshold: number = 0.75;
 
   constructor(options: any = {}) {
+    if (options.disableSecondPass !== undefined) {
+      this.disableSecondPass = options.disableSecondPass;
+    }
+
     if (options.error) {
       this.error = options.error;
     }
@@ -85,10 +94,6 @@ export class SpeechRecorder {
       this.minimumVolume = options.minimumVolume;
     }
 
-    if (options.sampleRate !== undefined) {
-      this.sampleRate = options.sampleRate;
-    }
-
     if (options.silenceThreshold !== undefined) {
       this.silenceThreshold = options.silenceThreshold;
     }
@@ -101,18 +106,42 @@ export class SpeechRecorder {
       this.triggers = options.triggers;
     }
 
-    this.vad = new VAD(this.sampleRate, options.level || 3);
+    if (options.vadBufferSize !== undefined) {
+      this.vadBufferSize = options.vadBufferSize;
+    }
+
+    if (options.vadThreshold !== undefined) {
+      this.vadThreshold = options.vadThreshold;
+    }
+
+    this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 3);
   }
 
-  onData(startOptions: any, audio: any) {
+  async onData(startOptions: any, audio: any) {
     let sum = 0;
+    let normalized: number[] = [];
     for (let i = 0; i < audio.length; i += 2) {
-      sum += Math.pow(audio.readInt16LE(i), 2);
+      const e = audio.readInt16LE(i);
+      sum += Math.pow(e, 2);
+      normalized.push(e / 32767);
+    }
+
+    this.vadBuffer.push(normalized);
+    while (this.vadBuffer.length > this.vadBufferSize) {
+      this.vadBuffer.shift();
     }
 
     // require a minimum (very low) volume threshold as well as a positive VAD result
     const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
-    const speaking = !!(this.vad.process(audio) && volume > this.minimumVolume);
+    let speaking = !!(this.webrtcVad.process(audio) && volume > this.minimumVolume);
+    let probability = speaking ? 1 : 0;
+
+    // double-check the WebRTC VAD with the Silero VAD
+    if (!this.disableSecondPass && speaking && this.vadBuffer.length == this.vadBufferSize) {
+      probability = await this.vad.process([].concat(...this.vadBuffer));
+      speaking = probability > this.vadThreshold;
+    }
+
     if (speaking) {
       this.consecutiveSilence = 0;
       this.consecutiveSpeech++;
@@ -152,7 +181,8 @@ export class SpeechRecorder {
         this.speaking,
         speaking,
         volume,
-        this.audioStarted ? this.consecutiveSilence : 0
+        this.audioStarted ? this.consecutiveSilence : 0,
+        probability
       );
     }
 
