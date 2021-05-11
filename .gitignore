@@ -10,3 +10,4 @@ node_modules
 *.raw
 *.map
 .idea
+/bin

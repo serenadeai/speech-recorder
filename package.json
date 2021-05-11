@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf build dist bin 9* 10* 11* *.raw",
+    "clean": "rm -rf build dist bin 9* 10* 11* 12* *.raw",
     "prepare": "tsc",
     "install": "node-gyp rebuild"
   },
