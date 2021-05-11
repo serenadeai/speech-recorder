@@ -86,14 +86,14 @@
               }
             },
             "libraries": [
-               "<(module_root_dir)/portaudio/bin/portaudio_x64.lib"
+               "<(module_root_dir)/portaudio/bin/windows/libportaudio.dll.a"
             ],
             "copies": [
               {
                 "destination": "<(module_root_dir)/build/Release",
                 "files": [
-                  "<(module_root_dir)/portaudio/bin/portaudio_x64.dll",
-                  "<(module_root_dir)/portaudio/bin/vcruntime140.dll"
+                  "<(module_root_dir)/portaudio/bin/windows/vcruntime140.dll",
+                  "<(module_root_dir)/portaudio/bin/windows/libportaudio-2.dll"
                 ]
               }
             ]

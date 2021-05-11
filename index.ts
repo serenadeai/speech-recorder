@@ -1,10 +1,9 @@
-import bindings from "bindings";
 import * as os from "os";
 import { Readable } from "stream";
 import WebrtcVad from "webrtcvad";
 import uuid from "uuid/v4";
 import SileroVad from "./vad";
-const portAudioBindings = bindings("portaudio.node");
+const portAudioBindings = require(`${__dirname}/../build/Release/portaudio.node`);
 
 export type Trigger = {
   id: string;
