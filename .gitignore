@@ -1,10 +1,10 @@
 build
 dist
-bin
 node_modules
 9*
 10*
 11*
+12*
 *.log
 *.wav
 *.raw
