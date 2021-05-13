@@ -1,9 +1,18 @@
+import bindings from "bindings";
+import * as fs from "fs";
 import * as os from "os";
 import { Readable } from "stream";
 import WebrtcVad from "webrtcvad";
 import uuid from "uuid/v4";
 import SileroVad from "./vad";
-const portAudioBindings = require(`${__dirname}/../build/Release/portaudio.node`);
+
+const portAudioPath = `${__dirname}/../build/Release/portaudio.node`;
+let portAudioBindings: any;
+if (fs.existsSync(portAudioPath)) {
+  portAudioBindings = require(portAudioPath);
+} else {
+  portAudioBindings = bindings("portaudio.node");
+}
 
 export type Trigger = {
   id: string;

@@ -1,7 +1,7 @@
 {
   "name": "speech-recorder",
   "author": "Serenade Labs, Inc. <contact@serenade.ai>",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Record speech via PortAudio and WebRTC VAD bindings.",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -13,6 +13,7 @@
   },
   "repository": "git+https://github.com/serenadeai/speech-recorder.git",
   "dependencies": {
+    "bindings": "^1.5.0",
     "nan": "^2.14.1",
     "onnxruntime": "^1.7.0",
     "uuid": "^3.3.3",
@@ -25,6 +26,7 @@
     "install": "node-gyp rebuild"
   },
   "devDependencies": {
+    "@types/bindings": "^1.5.0",
     "@types/node": "^12.11.5",
     "@types/uuid": "^3.4.6",
     "typescript": "^3.6.4"
