@@ -24,8 +24,15 @@
                             "OTHER_LDFLAGS": ["-Wl,-rpath,@loader_path/"],
                         },
                         "libraries": [
-                            "<(module_root_dir)/portaudio/bin/mac/libportaudio.a",
-                            "-framework CoreAudio",
+                            "<(module_root_dir)/build/Release/libportaudio.dylib",
+                        ],
+                        "copies": [
+                            {
+                                "destination": "<(module_root_dir)/build/Release",
+                                "files": [
+                                    "<(module_root_dir)/portaudio/lib/mac/libportaudio.dylib",
+                                ],
+                            }
                         ],
                     },
                 ],
@@ -43,14 +50,14 @@
                             }
                         },
                         "libraries": [
-                            "<(module_root_dir)/portaudio/bin/windows/libportaudio.dll.a"
+                            "<(module_root_dir)/portaudio/lib/windows/libportaudio.dll.a"
                         ],
                         "copies": [
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
-                                    "<(module_root_dir)/portaudio/bin/windows/vcruntime140.dll",
-                                    "<(module_root_dir)/portaudio/bin/windows/libportaudio-2.dll",
+                                    "<(module_root_dir)/portaudio/lib/windows/vcruntime140.dll",
+                                    "<(module_root_dir)/portaudio/lib/windows/libportaudio-2.dll",
                                 ],
                             }
                         ],
@@ -60,11 +67,11 @@
                     'OS=="linux"',
                     {
                         "libraries": [
-                            "<(module_root_dir)/portaudio/bin/linux/libportaudio.a",
+                            "<(module_root_dir)/portaudio/lib/linux/libportaudio.a",
                             "-lm",
                             "-lrt",
                             "-lasound",
-                            "-pthread"
+                            "-pthread",
                         ],
                     },
                 ],
