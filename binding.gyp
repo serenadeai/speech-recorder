@@ -66,12 +66,21 @@
                 [
                     'OS=="linux"',
                     {
+                        "link_settings": {
+                            "ldflags": [
+                                "-Wl,-rpath,'$$ORIGIN/'"
+                            ]
+                        },
                         "libraries": [
-                            "<(module_root_dir)/portaudio/lib/linux/libportaudio.a",
-                            "-lm",
-                            "-lrt",
-                            "-lasound",
-                            "-pthread",
+                            "<(module_root_dir)/build/Release/libportaudio.so.2",
+                        ],
+                        "copies": [
+                            {
+                                "destination": "<(module_root_dir)/build/Release",
+                                "files": [
+                                    "<(module_root_dir)/portaudio/lib/linux/libportaudio.so.2",
+                                ],
+                            }
                         ],
                     },
                 ],
