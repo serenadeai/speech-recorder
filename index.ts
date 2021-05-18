@@ -153,7 +153,7 @@ export class SpeechRecorder {
     if (!this.disableSecondPass && speaking && this.vadBuffer.length == this.vadBufferSize) {
       probability = await this.vad.process([].concat(...this.vadBuffer));
       speaking = probability > this.vadThreshold;
-      if (speaking && this.vadRateLimit > 0) {
+      if (this.vadRateLimit > 0) {
         this.vadBuffer.splice(0, Math.floor(this.vadBufferSize / this.vadRateLimit));
       }
     }
