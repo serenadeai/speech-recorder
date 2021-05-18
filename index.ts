@@ -75,6 +75,7 @@ export class SpeechRecorder {
   private vad = new SileroVad();
   private vadBuffer: number[][] = [];
   private vadBufferSize: number = 10;
+  private vadRateLimit: number = 0;
   private vadThreshold: number = 0.75;
 
   constructor(options: any = {}) {
@@ -118,6 +119,10 @@ export class SpeechRecorder {
       this.vadBufferSize = options.vadBufferSize;
     }
 
+    if (options.vadRateLimit !== undefined) {
+      this.vadRateLimit = options.vadRateLimit;
+    }
+
     if (options.vadThreshold !== undefined) {
       this.vadThreshold = options.vadThreshold;
     }
@@ -148,6 +153,9 @@ export class SpeechRecorder {
     if (!this.disableSecondPass && speaking && this.vadBuffer.length == this.vadBufferSize) {
       probability = await this.vad.process([].concat(...this.vadBuffer));
       speaking = probability > this.vadThreshold;
+      if (this.vadRateLimit > 0) {
+        this.vadBuffer.splice(0, Math.floor(this.vadBufferSize / this.vadRateLimit));
+      }
     }
 
     if (speaking) {
