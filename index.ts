@@ -119,6 +119,10 @@ export class SpeechRecorder {
       this.vadBufferSize = options.vadBufferSize;
     }
 
+    if (options.vadRateLimit !== undefined) {
+      this.vadRateLimit = options.vadRateLimit;
+    }
+
     if (options.vadThreshold !== undefined) {
       this.vadThreshold = options.vadThreshold;
     }
