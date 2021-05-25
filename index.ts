@@ -146,15 +146,22 @@ export class SpeechRecorder {
 
     // require a minimum (very low) volume threshold as well as a positive VAD result
     const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
-    let speaking = !!(this.webrtcVad.process(audio) && volume > this.minimumVolume);
+    let speaking = !!(
+      this.webrtcVad.process(audio) &&
+      volume > this.minimumVolume &&
+      this.vadBuffer.length == this.vadBufferSize
+    );
     let probability = speaking ? 1 : 0;
 
     // double-check the WebRTC VAD with the Silero VAD
     if (!this.disableSecondPass && speaking && this.vadBuffer.length == this.vadBufferSize) {
       probability = await this.vad.process([].concat(...this.vadBuffer));
       speaking = probability > this.vadThreshold;
-      if (this.vadRateLimit > 0) {
-        this.vadBuffer.splice(0, Math.floor(this.vadBufferSize / this.vadRateLimit));
+
+      // only trigger the rate limit while we're speaking, or else the next call might not use
+      // the Silero VAD, which would start the speaking state
+      if (this.vadRateLimit > 0 && speaking) {
+        this.vadBuffer.splice(0, Math.min(this.vadRateLimit, this.vadBufferSize));
       }
     }
 
