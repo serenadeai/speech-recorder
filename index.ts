@@ -154,7 +154,12 @@ export class SpeechRecorder {
     let probability = speaking ? 1 : 0;
 
     // double-check the WebRTC VAD with the Silero VAD
-    if (!this.disableSecondPass && speaking && this.vadBuffer.length == this.vadBufferSize) {
+    if (
+      !this.disableSecondPass &&
+      speaking &&
+      this.vadBuffer.length == this.vadBufferSize &&
+      this.vad.ready
+    ) {
       probability = await this.vad.process([].concat(...this.vadBuffer));
       speaking = probability > this.vadThreshold;
 
@@ -228,7 +233,11 @@ export class SpeechRecorder {
     }
   }
 
-  start(startOptions: any = {}) {
+  async start(startOptions: any = {}) {
+    if (!this.disableSecondPass) {
+      await this.vad.load();
+    }
+
     this.leadingBuffer = [];
     this.audioStream = new AudioStream({
       channelCount: 1,
