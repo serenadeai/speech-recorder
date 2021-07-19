@@ -130,6 +130,12 @@ export class SpeechRecorder {
     this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 3);
   }
 
+  async load() {
+    if (!this.disableSecondPass) {
+      await this.vad.load();
+    }
+  }
+
   async onData(startOptions: any, audio: any) {
     let sum = 0;
     let normalized: number[] = [];
@@ -234,10 +240,7 @@ export class SpeechRecorder {
   }
 
   async start(startOptions: any = {}) {
-    if (!this.disableSecondPass) {
-      await this.vad.load();
-    }
-
+    await this.load();
     this.leadingBuffer = [];
     this.audioStream = new AudioStream({
       channelCount: 1,
