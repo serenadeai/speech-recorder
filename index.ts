@@ -35,6 +35,7 @@ class AudioStream extends Readable {
 
   _read(size: number) {
     this.audio.read(size, (err: any, buf: any) => {
+      console.log(err);
       if (!err) {
         this.push(buf);
       } else {
@@ -83,7 +84,7 @@ export class SpeechRecorder {
       this.disableSecondPass = options.disableSecondPass;
     }
 
-    if (options.error) {
+    if (options.error !== undefined) {
       this.error = options.error;
     }
 
@@ -240,11 +241,20 @@ export class SpeechRecorder {
   }
 
   async start(startOptions: any = {}) {
+    if (!startOptions) {
+      startOptions = {};
+    }
+
+    let deviceId = startOptions.deviceId;
+    if (deviceId === undefined) {
+      deviceId = -1;
+    }
+
     await this.load();
     this.leadingBuffer = [];
     this.audioStream = new AudioStream({
       channelCount: 1,
-      deviceId: startOptions.deviceId || -1,
+      deviceId,
       error: this.error,
       highWaterMark: this.highWaterMark,
       framesPerBuffer: this.framesPerBuffer,
@@ -273,6 +283,8 @@ export class SpeechRecorder {
 
   stop() {
     this.audioStream.stop();
+    this.audioStream.destroy();
+    this.audioStream = null;
     this.reset();
   }
 }
