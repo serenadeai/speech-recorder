@@ -35,7 +35,6 @@ class AudioStream extends Readable {
 
   _read(size: number) {
     this.audio.read(size, (err: any, buf: any) => {
-      console.log(err);
       if (!err) {
         this.push(buf);
       } else {
