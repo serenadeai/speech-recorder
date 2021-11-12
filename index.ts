@@ -1,6 +1,7 @@
 import bindings from "bindings";
 import * as fs from "fs";
 import * as os from "os";
+import { WaveFile } from "wavefile";
 import { Readable } from "stream";
 import WebrtcVad from "webrtcvad";
 import uuid from "uuid/v4";
@@ -158,21 +159,17 @@ export class SpeechRecorder {
       this.vadBuffer.splice(0, this.vadBuffer.length - this.vadBufferSize);
     }
 
-    // require a minimum (very low) volume threshold as well as a positive VAD result
+    // until we've filled up the VAD buffer, ignore the results of both VADs
     const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
     let speaking = !!(
       this.webrtcVad.process(audio) &&
-      volume > this.minimumVolume
+      volume > this.minimumVolume &&
+      this.vadBuffer.length == this.vadBufferSize
     );
     let probability = speaking ? 1 : 0;
 
     // double-check the WebRTC VAD with the Silero VAD
-    if (
-      speaking &&
-      !this.disableSecondPass &&
-      this.vadBuffer.length == this.vadBufferSize &&
-      this.vad.ready
-    ) {
+    if (speaking && !this.disableSecondPass && this.vad.ready) {
       // cache values of probability and speaking for buffersUntilVad frames
       if (this.buffersUntilVad == 0) {
         this.vadLastProbability = await this.vad.process(this.vadBuffer);
@@ -247,6 +244,27 @@ export class SpeechRecorder {
     }
   }
 
+  async processFile(path: string, startOptions: any = {}) {
+    if (!startOptions) {
+      startOptions = {};
+    }
+
+    this.reset();
+    await this.load();
+
+    const wav = new WaveFile(fs.readFileSync(path));
+    const samples = wav.getSamples(false, Int16Array);
+    for (let i = 0; i < samples.length; i += this.framesPerBuffer) {
+      let buffer = [];
+      for (let j = 0; j < this.framesPerBuffer; j++) {
+        buffer.push((samples[i + j] >> 8) & 0xff);
+        buffer.push(samples[i + j] & 0xff);
+      }
+
+      await this.onData(startOptions, Buffer.from(buffer));
+    }
+  }
+
   async start(startOptions: any = {}) {
     if (!startOptions) {
       startOptions = {};
@@ -257,6 +275,7 @@ export class SpeechRecorder {
       deviceId = -1;
     }
 
+    this.reset();
     await this.load();
     this.leadingBuffer = [];
     this.audioStream = new AudioStream({
