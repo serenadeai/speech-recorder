@@ -1,7 +1,7 @@
 {
   "name": "speech-recorder",
   "author": "Serenade Labs, Inc. <contact@serenade.ai>",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "description": "Record speech via PortAudio and WebRTC VAD bindings.",
   "license": "MIT",
   "main": "./dist/index.js",
