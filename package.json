@@ -17,6 +17,7 @@
     "nan": "^2.14.1",
     "onnxruntime": "^1.7.0",
     "uuid": "^3.3.3",
+    "wavefile": "^11.0.0",
     "webrtcvad": "^1.0.1"
   },
   "scripts": {

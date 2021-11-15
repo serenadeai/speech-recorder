@@ -1,6 +1,7 @@
 import bindings from "bindings";
 import * as fs from "fs";
 import * as os from "os";
+import { WaveFile } from "wavefile";
 import { Readable } from "stream";
 import WebrtcVad from "webrtcvad";
 import uuid from "uuid/v4";
@@ -57,6 +58,7 @@ class AudioStream extends Readable {
 export class SpeechRecorder {
   private audioStarted = false;
   private audioStream?: AudioStream;
+  private buffersUntilVad: number = 0;
   private consecutiveSpeech: number = 0;
   private consecutiveSilence: number = 0;
   private disableSecondPass: boolean = false;
@@ -73,9 +75,12 @@ export class SpeechRecorder {
   private triggers: Trigger[] = [];
   private webrtcVad: WebrtcVad;
   private vad = new SileroVad();
-  private vadBuffer: number[][] = [];
-  private vadBufferSize: number = 10;
-  private vadRateLimit: number = 0;
+  private vadBuffer: number[] = [];
+  // 250 ms so that it's consistent with the silero python example.
+  private vadBufferSize: number = 4000;
+  private vadRateLimit: number = 5;
+  private vadLastSpeaking: boolean = false;
+  private vadLastProbability: number = 0;
   private vadThreshold: number = 0.75;
 
   constructor(options: any = {}) {
@@ -145,12 +150,16 @@ export class SpeechRecorder {
       normalized.push(e / 32767);
     }
 
-    this.vadBuffer.push(normalized);
-    while (this.vadBuffer.length > this.vadBufferSize) {
-      this.vadBuffer.shift();
+    if (this.buffersUntilVad > 0) {
+      this.buffersUntilVad--;
     }
 
-    // require a minimum (very low) volume threshold as well as a positive VAD result
+    this.vadBuffer.push(...normalized);
+    if (this.vadBuffer.length > this.vadBufferSize) {
+      this.vadBuffer.splice(0, this.vadBuffer.length - this.vadBufferSize);
+    }
+
+    // until we've filled up the VAD buffer, ignore the results of both VADs
     const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
     let speaking = !!(
       this.webrtcVad.process(audio) &&
@@ -160,20 +169,16 @@ export class SpeechRecorder {
     let probability = speaking ? 1 : 0;
 
     // double-check the WebRTC VAD with the Silero VAD
-    if (
-      !this.disableSecondPass &&
-      speaking &&
-      this.vadBuffer.length == this.vadBufferSize &&
-      this.vad.ready
-    ) {
-      probability = await this.vad.process([].concat(...this.vadBuffer));
-      speaking = probability > this.vadThreshold;
-
-      // only trigger the rate limit while we're speaking, or else the next call might not use
-      // the Silero VAD, which would start the speaking state
-      if (this.vadRateLimit > 0 && speaking) {
-        this.vadBuffer.splice(0, Math.min(this.vadRateLimit, this.vadBufferSize));
+    if (speaking && !this.disableSecondPass && this.vad.ready) {
+      // cache values of probability and speaking for buffersUntilVad frames
+      if (this.buffersUntilVad == 0) {
+        this.vadLastProbability = await this.vad.process(this.vadBuffer);
+        this.vadLastSpeaking = this.vadLastProbability > this.vadThreshold;
+        this.buffersUntilVad = this.vadRateLimit;
       }
+
+      speaking = this.vadLastSpeaking;
+      probability = this.vadLastProbability;
     }
 
     if (speaking) {
@@ -203,8 +208,8 @@ export class SpeechRecorder {
 
       // we're still not speaking, so trim the buffer to its specified size
       else {
-        while (this.leadingBuffer.length > this.leadingPadding) {
-          this.leadingBuffer.shift();
+        if (this.leadingBuffer.length > this.leadingPadding) {
+          this.leadingBuffer.splice(0, this.leadingBuffer.length - this.leadingPadding);
         }
       }
     }
@@ -239,6 +244,27 @@ export class SpeechRecorder {
     }
   }
 
+  async processFile(path: string, startOptions: any = {}) {
+    if (!startOptions) {
+      startOptions = {};
+    }
+
+    this.reset();
+    await this.load();
+
+    const wav = new WaveFile(fs.readFileSync(path));
+    const samples = wav.getSamples(false, Int32Array);
+    for (let i = 0; i < samples.length; i += this.framesPerBuffer) {
+      let buffer = [];
+      for (let j = 0; j < this.framesPerBuffer; j++) {
+        buffer.push(samples[i + j] & 0xff);
+        buffer.push((samples[i + j] >> 8) & 0xff);
+      }
+
+      await this.onData(startOptions, Buffer.from(buffer));
+    }
+  }
+
   async start(startOptions: any = {}) {
     if (!startOptions) {
       startOptions = {};
@@ -249,6 +275,7 @@ export class SpeechRecorder {
       deviceId = -1;
     }
 
+    this.reset();
     await this.load();
     this.leadingBuffer = [];
     this.audioStream = new AudioStream({
@@ -278,6 +305,9 @@ export class SpeechRecorder {
     this.audioStarted = false;
     this.consecutiveSilence = 0;
     this.consecutiveSpeech = 0;
+    this.buffersUntilVad = 0;
+    this.vadLastSpeaking = false;
+    this.vadLastProbability = 0;
   }
 
   stop() {
