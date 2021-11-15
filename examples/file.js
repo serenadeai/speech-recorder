@@ -9,14 +9,20 @@ if (process.argv.length < 3) {
 
 fs.readdir(process.argv[2], async (error, files) => {
   for (const file of files) {
-    let chunks = 0;
+    let start = 0;
+    let end = 0;
+
     const recorder = new SpeechRecorder();
     await recorder.processFile(path.join(process.argv[2], file), {
       onChunkStart: (audio) => {
-        chunks++;
+        start++;
+      },
+
+      onChunkEnd: () => {
+        end++;
       },
     });
 
-    console.log(file, chunks);
+    console.log(file, start, end);
   }
 });

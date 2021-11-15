@@ -253,12 +253,12 @@ export class SpeechRecorder {
     await this.load();
 
     const wav = new WaveFile(fs.readFileSync(path));
-    const samples = wav.getSamples(false, Int16Array);
+    const samples = wav.getSamples(false, Int32Array);
     for (let i = 0; i < samples.length; i += this.framesPerBuffer) {
       let buffer = [];
       for (let j = 0; j < this.framesPerBuffer; j++) {
-        buffer.push((samples[i + j] >> 8) & 0xff);
         buffer.push(samples[i + j] & 0xff);
+        buffer.push((samples[i + j] >> 8) & 0xff);
       }
 
       await this.onData(startOptions, Buffer.from(buffer));
