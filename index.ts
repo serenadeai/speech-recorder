@@ -80,7 +80,7 @@ export class SpeechRecorder {
   private vadLastSpeaking: boolean = false;
   private vadRateLimit: number = 3;
   private vadSilenceThreshold: number = 0.1;
-  private vadSpeechThreshold: number = 0.75;
+  private vadSpeechThreshold: number = 0.5;
   private webrtcVad: WebrtcVad;
   private webrtcResultsBuffer: boolean[] = [];
   private webrtcResultsBufferSize: number = 3;

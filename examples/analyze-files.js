@@ -63,16 +63,19 @@ fs.readdir(process.argv[2], async (error, files) => {
     }
 
     if (label.length == 0 && result.length > 0) {
-      console.log("Noise was speech:", i, result);
+      console.log("Noise was speech:", i);
+      console.log("VAD:", result);
       noiseWasSpeech.push(i);
     }
 
     if (label.length > 0 && result.length > 0) {
       const start = Math.min(...result.map((e) => e[0]));
-      const stop = Math.min(...result.map((e) => e[1]));
-      const tolerance = 0.04;
-      if (result > label[0] + tolerance || result < label[1] - tolerance) {
-        console.log("Speech window too small:", i, result);
+      const stop = Math.max(...result.map((e) => e[1]));
+      const tolerance = 0.05;
+      if (start - 0.4 > label[0] + tolerance || stop < label[1] - tolerance) {
+        console.log("Speech window too small:", i);
+        console.log("Label:", label);
+        console.log("VAD:", result, start, stop);
         speechWindowTooSmall.push(i);
       } else if (stop > label[1]) {
         extra.push(stop - label[1]);
