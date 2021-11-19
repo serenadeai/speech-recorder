@@ -76,11 +76,11 @@ export class SpeechRecorder {
   private vadBuffer: number[] = [];
   // 250 ms so that it's consistent with the silero python example.
   private vadBufferSize: number = 4000;
-  private vadRateLimit: number = 3;
-  private vadLastSpeaking: boolean = false;
   private vadLastProbability: number = 0;
+  private vadLastSpeaking: boolean = false;
+  private vadRateLimit: number = 3;
   private vadSilenceThreshold: number = 0.1;
-  private vadSpeechThreshold: number = 0.3;
+  private vadSpeechThreshold: number = 0.75;
   private webrtcVad: WebrtcVad;
   private webrtcResultsBuffer: boolean[] = [];
   private webrtcResultsBufferSize: number = 3;
