@@ -4,7 +4,6 @@ import * as os from "os";
 import { WaveFile } from "wavefile";
 import { Readable } from "stream";
 import WebrtcVad from "webrtcvad";
-import uuid from "uuid/v4";
 import SileroVad from "./vad";
 
 const portAudioPath = `${__dirname}/../build/Release/portaudio.node`;
