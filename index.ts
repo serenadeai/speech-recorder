@@ -74,13 +74,12 @@ export class SpeechRecorder {
   private triggers: Trigger[] = [];
   private vad = new SileroVad();
   private vadBuffer: number[] = [];
-  // 250 ms so that it's consistent with the silero python example.
-  private vadBufferSize: number = 4000;
+  private vadBufferSize: number;
   private vadLastProbability: number = 0;
   private vadLastSpeaking: boolean = false;
   private vadRateLimit: number = 3;
   private vadSilenceThreshold: number = 0.1;
-  private vadSpeechThreshold: number = 0.5;
+  private vadSpeechThreshold: number = 0.3;
   private webrtcVad: WebrtcVad;
   private webrtcResultsBuffer: boolean[] = [];
   private webrtcResultsBufferSize: number = 3;
@@ -142,7 +141,8 @@ export class SpeechRecorder {
       this.vadSpeechThreshold = options.vadSpeechThreshold;
     }
 
-    this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 1);
+    this.vadBufferSize = this.sampleRate / 4 + this.framesPerBuffer * 2;
+    this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 2);
   }
 
   async load() {
@@ -190,11 +190,28 @@ export class SpeechRecorder {
     if (speaking && !this.disableSecondPass && this.vad.ready) {
       // cache values of probability and speaking for buffersUntilVad frames
       if (this.buffersUntilVad == 0) {
-        this.vadLastProbability = await this.vad.process(this.vadBuffer);
+        this.buffersUntilVad = this.vadRateLimit;
+        this.vadLastProbability = await this.vad.process(
+          this.vadBuffer.slice(this.framesPerBuffer * 2)
+        );
+
+        if (!this.speaking && this.vadLastProbability > 0.7 * this.vadSpeechThreshold) {
+          const probabilities = [
+            await this.vad.process(
+              this.vadBuffer.slice(0, this.vadBufferSize - this.framesPerBuffer * 2)
+            ),
+            await this.vad.process(
+              this.vadBuffer.slice(this.framesPerBuffer, this.vadBufferSize - this.framesPerBuffer)
+            ),
+            this.vadLastProbability,
+          ];
+
+          this.vadLastProbability = probabilities.reduce((a, b) => a + b, 0) / probabilities.length;
+        }
+
         this.vadLastSpeaking = this.speaking
           ? this.vadLastProbability > this.vadSilenceThreshold
           : this.vadLastProbability > this.vadSpeechThreshold;
-        this.buffersUntilVad = this.vadRateLimit;
       }
 
       speaking = this.vadLastSpeaking;

@@ -71,6 +71,10 @@ fs.readdir(process.argv[2], async (error, files) => {
     if (label.length > 0 && result.length > 0) {
       const start = Math.min(...result.map((e) => e[0]));
       const stop = Math.max(...result.map((e) => e[1]));
+      if (isNaN(start) || isNaN(stop)) {
+        continue;
+      }
+
       const tolerance = 0.05;
       if (start - 0.4 > label[0] + tolerance || stop < label[1] - tolerance) {
         console.log("Speech window too small:", i);
