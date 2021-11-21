@@ -70,7 +70,7 @@ export class SpeechRecorder {
   private sampleRate: number = 16000;
   private speaking: boolean = false;
   private speakingThreshold: number = 1;
-  private silenceThreshold: number = 10;
+  private silenceThreshold: number = 5;
   private triggers: Trigger[] = [];
   private vad = new SileroVad();
   private vadBuffer: number[] = [];
@@ -195,7 +195,12 @@ export class SpeechRecorder {
           this.vadBuffer.slice(this.framesPerBuffer * 2)
         );
 
-        if (!this.speaking && this.vadLastProbability > 0.7 * this.vadSpeechThreshold) {
+        if (
+          (!this.speaking && this.vadLastProbability > 0.7 * this.vadSpeechThreshold) ||
+          (this.speaking &&
+            this.vadLastProbability < this.vadSilenceThreshold &&
+            this.vadLastProbability > 0.7 * this.vadSilenceThreshold)
+        ) {
           const probabilities = [
             await this.vad.process(
               this.vadBuffer.slice(0, this.vadBufferSize - this.framesPerBuffer * 2)
