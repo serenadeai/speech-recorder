@@ -78,6 +78,7 @@ export class SpeechRecorder {
   private vadLastProbability: number = 0;
   private vadLastSpeaking: boolean = false;
   private vadRateLimit: number = 3;
+  private vadRefinementWindow: number = 2;
   private vadSilenceThreshold: number = 0.1;
   private vadSpeechThreshold: number = 0.3;
   private webrtcVad: WebrtcVad;
@@ -133,6 +134,10 @@ export class SpeechRecorder {
       this.vadRateLimit = options.vadRateLimit;
     }
 
+    if (options.vadRefinementWindow !== undefined) {
+      this.vadRefinementWindow = options.vadRefinementWindow;
+    }
+
     if (options.vadSilenceThreshold !== undefined) {
       this.vadSilenceThreshold = options.vadSilenceThreshold;
     }
@@ -141,7 +146,7 @@ export class SpeechRecorder {
       this.vadSpeechThreshold = options.vadSpeechThreshold;
     }
 
-    this.vadBufferSize = this.sampleRate / 4 + this.framesPerBuffer * 2;
+    this.vadBufferSize = this.sampleRate / 4 + this.framesPerBuffer * this.vadRefinementWindow;
     this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 2);
   }
 
@@ -192,25 +197,31 @@ export class SpeechRecorder {
       if (this.buffersUntilVad == 0) {
         this.buffersUntilVad = this.vadRateLimit;
         this.vadLastProbability = await this.vad.process(
-          this.vadBuffer.slice(this.framesPerBuffer * 2)
+          this.vadBuffer.slice(this.framesPerBuffer * this.vadRefinementWindow)
         );
 
+        const tolerance = 0.15;
         if (
-          (!this.speaking && this.vadLastProbability > 0.7 * this.vadSpeechThreshold) ||
+          (!this.speaking &&
+            Math.abs(this.vadLastProbability - this.vadSpeechThreshold) <
+              tolerance * this.vadSpeechThreshold) ||
           (this.speaking &&
-            this.vadLastProbability < this.vadSilenceThreshold &&
-            this.vadLastProbability > 0.7 * this.vadSilenceThreshold)
+            Math.abs(this.vadLastProbability - this.vadSilenceThreshold) <
+              tolerance * this.vadSilenceThreshold)
         ) {
-          const probabilities = [
-            await this.vad.process(
-              this.vadBuffer.slice(0, this.vadBufferSize - this.framesPerBuffer * 2)
-            ),
-            await this.vad.process(
-              this.vadBuffer.slice(this.framesPerBuffer, this.vadBufferSize - this.framesPerBuffer)
-            ),
-            this.vadLastProbability,
-          ];
+          let probabilities = [];
+          for (let i = 0; i < this.vadRefinementWindow; i++) {
+            probabilities.push(
+              await this.vad.process(
+                this.vadBuffer.slice(
+                  this.framesPerBuffer * i,
+                  this.vadBufferSize - this.framesPerBuffer * (this.vadRefinementWindow - i)
+                )
+              )
+            );
+          }
 
+          probabilities.push(this.vadLastProbability);
           this.vadLastProbability = probabilities.reduce((a, b) => a + b, 0) / probabilities.length;
         }
 
