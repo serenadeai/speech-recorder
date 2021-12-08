@@ -4,7 +4,6 @@ import * as os from "os";
 import { WaveFile } from "wavefile";
 import { Readable } from "stream";
 import WebrtcVad from "webrtcvad";
-import uuid from "uuid/v4";
 import SileroVad from "./vad";
 
 const portAudioPath = `${__dirname}/../build/Release/portaudio.node`;
@@ -67,21 +66,24 @@ export class SpeechRecorder {
   private highWaterMark: number = 64000;
   private leadingBuffer: Buffer[] = [];
   private leadingPadding: number = 20;
-  private minimumVolume: number = 200;
+  private minimumVolume: number = 1;
   private sampleRate: number = 16000;
   private speaking: boolean = false;
   private speakingThreshold: number = 1;
-  private silenceThreshold: number = 10;
+  private silenceThreshold: number = 5;
   private triggers: Trigger[] = [];
-  private webrtcVad: WebrtcVad;
   private vad = new SileroVad();
   private vadBuffer: number[] = [];
-  // 250 ms so that it's consistent with the silero python example.
-  private vadBufferSize: number = 4000;
-  private vadRateLimit: number = 5;
-  private vadLastSpeaking: boolean = false;
+  private vadBufferSize: number;
   private vadLastProbability: number = 0;
-  private vadThreshold: number = 0.75;
+  private vadLastSpeaking: boolean = false;
+  private vadRateLimit: number = 3;
+  private vadRefinementWindow: number = 2;
+  private vadSilenceThreshold: number = 0.1;
+  private vadSpeechThreshold: number = 0.3;
+  private webrtcVad: WebrtcVad;
+  private webrtcResultsBuffer: boolean[] = [];
+  private webrtcResultsBufferSize: number = 3;
 
   constructor(options: any = {}) {
     if (options.disableSecondPass !== undefined) {
@@ -90,6 +92,10 @@ export class SpeechRecorder {
 
     if (options.error !== undefined) {
       this.error = options.error;
+    }
+
+    if (options.firstPassResultsBufferSize !== undefined) {
+      this.webrtcResultsBufferSize = options.firstPassResultsBufferSize;
     }
 
     if (options.framesPerBuffer !== undefined) {
@@ -128,11 +134,20 @@ export class SpeechRecorder {
       this.vadRateLimit = options.vadRateLimit;
     }
 
-    if (options.vadThreshold !== undefined) {
-      this.vadThreshold = options.vadThreshold;
+    if (options.vadRefinementWindow !== undefined) {
+      this.vadRefinementWindow = options.vadRefinementWindow;
     }
 
-    this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 3);
+    if (options.vadSilenceThreshold !== undefined) {
+      this.vadSilenceThreshold = options.vadSilenceThreshold;
+    }
+
+    if (options.vadSpeechThreshold !== undefined) {
+      this.vadSpeechThreshold = options.vadSpeechThreshold;
+    }
+
+    this.vadBufferSize = this.sampleRate / 4 + this.framesPerBuffer * this.vadRefinementWindow;
+    this.webrtcVad = new WebrtcVad(this.sampleRate, options.firstPassLevel || 2);
   }
 
   async load() {
@@ -159,10 +174,18 @@ export class SpeechRecorder {
       this.vadBuffer.splice(0, this.vadBuffer.length - this.vadBufferSize);
     }
 
-    // until we've filled up the VAD buffer, ignore the results of both VADs
     const volume = Math.floor(Math.sqrt(sum / (audio.length / 2)));
+    this.webrtcResultsBuffer.push(this.webrtcVad.process(audio));
+    if (this.webrtcResultsBuffer.length > this.webrtcResultsBufferSize) {
+      this.webrtcResultsBuffer.splice(
+        0,
+        this.webrtcResultsBuffer.length - this.webrtcResultsBufferSize
+      );
+    }
+
+    // until we've filled up the VAD buffer, ignore the results of both VADs
     let speaking = !!(
-      this.webrtcVad.process(audio) &&
+      this.webrtcResultsBuffer.some((e) => e) &&
       volume > this.minimumVolume &&
       this.vadBuffer.length == this.vadBufferSize
     );
@@ -172,9 +195,39 @@ export class SpeechRecorder {
     if (speaking && !this.disableSecondPass && this.vad.ready) {
       // cache values of probability and speaking for buffersUntilVad frames
       if (this.buffersUntilVad == 0) {
-        this.vadLastProbability = await this.vad.process(this.vadBuffer);
-        this.vadLastSpeaking = this.vadLastProbability > this.vadThreshold;
         this.buffersUntilVad = this.vadRateLimit;
+        this.vadLastProbability = await this.vad.process(
+          this.vadBuffer.slice(this.framesPerBuffer * this.vadRefinementWindow)
+        );
+
+        const tolerance = 0.15;
+        if (
+          (!this.speaking &&
+            Math.abs(this.vadLastProbability - this.vadSpeechThreshold) <
+              tolerance * this.vadSpeechThreshold) ||
+          (this.speaking &&
+            Math.abs(this.vadLastProbability - this.vadSilenceThreshold) <
+              tolerance * this.vadSilenceThreshold)
+        ) {
+          let probabilities = [];
+          for (let i = 0; i < this.vadRefinementWindow; i++) {
+            probabilities.push(
+              await this.vad.process(
+                this.vadBuffer.slice(
+                  this.framesPerBuffer * i,
+                  this.vadBufferSize - this.framesPerBuffer * (this.vadRefinementWindow - i)
+                )
+              )
+            );
+          }
+
+          probabilities.push(this.vadLastProbability);
+          this.vadLastProbability = probabilities.reduce((a, b) => a + b, 0) / probabilities.length;
+        }
+
+        this.vadLastSpeaking = this.speaking
+          ? this.vadLastProbability > this.vadSilenceThreshold
+          : this.vadLastProbability > this.vadSpeechThreshold;
       }
 
       speaking = this.vadLastSpeaking;
