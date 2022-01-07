@@ -1,33 +1,32 @@
 {
   "name": "speech-recorder",
-  "author": "Serenade Labs, Inc. <contact@serenade.ai>",
-  "version": "1.4.0",
-  "description": "Record speech via PortAudio and WebRTC VAD bindings.",
+  "version": "2.0.0",
+  "description": "A library for audio and speech streaming using the microphone.",
+  "main": "src/index.js",
+  "repository": "https://github.com/serenadeai/speech-recorder-native",
+  "author": "Serenade",
   "license": "MIT",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "gypfile": true,
-  "keywords": ["portaudio", "audio", "record", "pcm"],
-  "bugs": {
-    "url": "https://github.com/serenadeai/speech-recorder/issues"
-  },
-  "repository": "git+https://github.com/serenadeai/speech-recorder.git",
-  "dependencies": {
-    "bindings": "^1.5.0",
-    "nan": "^2.14.1",
-    "onnxruntime": "^1.7.0",
-    "wavefile": "^11.0.0",
-    "webrtcvad": "^1.0.1"
+  "binary": {
+    "napi_versions": [6]
   },
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf build dist bin 9* 10* 11* 12* *.raw",
-    "prepare": "tsc",
-    "install": "node-gyp rebuild"
+    "build": "node build.js",
+    "clean": "rm -rf build prebuilds lib/build",
+    "install": "prebuild-install -r napi || node-gyp rebuild",
+    "package": "prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$'",
+    "package:linux": "yarn package --arch=ia32",
+    "package:mac": "yarn package --arch=x64",
+    "package:windows": "yarn package --arch=ia32",
+    "package:upload": "yarn package --upload ${GITHUB_TOKEN}"
+  },
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^4.2.0",
+    "prebuild-install": "^7.0.0"
   },
   "devDependencies": {
-    "@types/bindings": "^1.5.0",
-    "@types/node": "^12.11.5",
-    "typescript": "^3.6.4"
+    "prebuild": "^11.0.0",
+    "wavefile": "^11.0.0"
   }
 }
