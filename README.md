@@ -71,10 +71,9 @@ Or, just the speech with:
 
 You can get a list of supported devices with:
 
-    const { SpeechRecorder } = require("speech-recorder");
+    const { devices } = require("speech-recorder");
 
-    const recorder = new SpeechRecorder();
-    console.log(recorder.getDevices());
+    console.log(devices());
 
 ### Options
 
@@ -96,59 +95,24 @@ You can get a list of supported devices with:
 
 ## Building SpeechRecorder
 
-If you want to build speech-recorder from source, then follow these instructions.
+If you want to build speech-recorder from source, first install the necessary dependencies by running:
 
-### PortAudio
+    node setup.js
 
-Download PortAudio from http://files.portaudio.com/download.html using wget, not a web browser (or you might run into Mac security warnings). Build PortAudio using CMake:
-
-    cd $PORTAUDIO_PATH
-    mkdir dist install
-    cd dist
-    cmake \
-        -DCMAKE_INSTALL_PREFIX=../install \
-        -DCMAKE_OSX_ARCHITECTURES=x86_64 \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 \
-        ..
-    cmake --build . --config Release
-    cmake --install .
-    cp -r ../install $SPEECH_RECORDER_PATH/lib/3rd_party/portaudio
-
-### Onnx
-
-#### Mac and Linux
-
-Download onnxruntime from https://onnxruntime.ai. If you're on a Mac, use a tool like wget rather than a web browser, or you might run into some security warnings. Now, copy these files:
-
-    cd $SPEECH_RECORDER_PATH
-    cp -r onnxruntime lib/3rd_party/onnxruntime
-
-#### Windows
-
-Download onnxruntime from https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime. Change the file extension fron .nupkg to .zip, then extract it. Now, copy these files:
-
-    cd $SPEECH_RECORDER_PATH
-    mkdir -p lib/3rd_party/onnxruntime/lib
-    cp -r onnxruntime/build/native/include lib/3rd_party/onnxruntime
-    cp onnxruntime/runtimes/win-x86/native/*.dll lib/3rd_party/onnxruntime/lib
-    cp onnxruntime/runtimes/win-x86/native/*.lib lib/3rd_party/onnxruntime/lib
-
-### speech-recorder
-
-Now that everything is set up, you can run the below to build speech-recorder:
+Then, you can build speech-recorder with:
 
     yarn build
 
 ### Packaging
 
-After speech-recorder is built, to create a prebuild package, run one of:
+After speech-recorder is built, create a prebuild package with one of:
 
-    yarn package:linux
     yarn package:mac
     yarn package:windows
+    yarn package:linux
 
 Or, to build speech-recorder against the current architecture, run:
 
     yarn package
 
-Keep in mind that the architecture of ONNX, PortAudio, and speech-recorder (see build.js) need to match.
+Keep in mind that the architectures of ONNX, PortAudio, and speech-recorder (see build.js and setup.js) all need to match.

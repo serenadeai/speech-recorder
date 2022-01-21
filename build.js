@@ -16,7 +16,12 @@ process.chdir(__dirname);
 fs.mkdirSync("lib/build", { recursive: true });
 
 process.chdir("lib/build");
-run("cmake -DCMAKE_OSX_ARCHITECTURES=x86_64 ..");
+if (process.platform == "win32") {
+  run("cmake -A Win32 ..");
+} else {
+  run("cmake -DCMAKE_OSX_ARCHITECTURES=x86_64 ..");
+}
+
 run("cmake --build . --config Release");
 
 process.chdir(__dirname);
