@@ -16,12 +16,21 @@ fi
 cmake --build . --config Release
 cd ../..
 
+rm -rf prebuilds
 if [[ `uname -s` == "Darwin" ]] ; then
   npm_config_arch=x64 ./node_modules/.bin/node-gyp rebuild
-  ./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=x64
+  if [[ -n "$1" ]] ; then
+    ./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=x64 --upload $1
+  else
+    ./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=x64
+  fi
 else
   npm_config_arch=ia32 ./node_modules/.bin/node-gyp rebuild
-  ./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=ia32
+  if [[ -n "$1" ]] ; then
+    ./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=ia32 --upload $1
+  else
+    ./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=ia32
+  fi
 fi
 
 popd &> /dev/null
