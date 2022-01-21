@@ -11,14 +11,9 @@
     "napi_versions": [6]
   },
   "scripts": {
-    "build": "node build.js",
+    "build": "bash build.sh",
     "clean": "rm -rf build prebuilds lib/build",
-    "install": "prebuild-install -r napi || node-gyp rebuild",
-    "package": "prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$'",
-    "package:linux": "yarn package --arch=ia32",
-    "package:mac": "yarn package --arch=x64",
-    "package:windows": "yarn package --arch=ia32",
-    "package:upload": "yarn package --upload ${GITHUB_TOKEN}"
+    "install": "prebuild-install -r napi || node-gyp rebuild"
   },
   "dependencies": {
     "bindings": "^1.5.0",
