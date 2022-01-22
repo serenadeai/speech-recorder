@@ -67,7 +67,7 @@
                                     "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime.dll",
                                     "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll",
                                     "<(module_root_dir)/lib/3rd_party/vcruntime/vcruntime140.dll",
-                                ]
+                                ],
                             }
                         ],
                         "libraries": [
@@ -75,15 +75,11 @@
                             "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x86.lib",
                             "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime.lib",
                             "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.lib",
-                        ]
+                        ],
                     },
                     'OS=="linux"',
                     {
-                        "link_settings": {
-                            "ldflags": [
-                                "-Wl,-rpath,'$$ORIGIN/'"
-                            ]
-                        },
+                        "link_settings": {"ldflags": ["-Wl,-rpath,'$$ORIGIN/'"]},
                         "copies": [
                             {
                                 "destination": "<(module_root_dir)/build/Release",
