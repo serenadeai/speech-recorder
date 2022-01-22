@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "A library for audio and speech streaming using the microphone.",
   "main": "src/index.js",
-  "repository": "https://github.com/serenadeai/speech-recorder-native",
+  "repository": "https://github.com/serenadeai/speech-recorder",
   "author": "Serenade",
   "license": "MIT",
   "gypfile": true,
