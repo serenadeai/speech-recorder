@@ -97,22 +97,10 @@ You can get a list of supported devices with:
 
 If you want to build speech-recorder from source, first install the necessary dependencies by running:
 
-    node setup.js
+    ./setup.sh <arch>
+
+Where `<arch>` specifies the architecture you'd like to build for and is one of `x86`, `x64`, or `arm64`. If you're not sure, you probably want `x64`.
 
 Then, you can build speech-recorder with:
 
-    yarn build
-
-### Packaging
-
-After speech-recorder is built, create a prebuild package with one of:
-
-    yarn package:mac
-    yarn package:windows
-    yarn package:linux
-
-Or, to build speech-recorder against the current architecture, run:
-
-    yarn package
-
-Keep in mind that the architectures of ONNX, PortAudio, and speech-recorder (see build.js and setup.js) all need to match.
+    ./build.sh <arch>
