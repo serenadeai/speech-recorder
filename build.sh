@@ -9,6 +9,7 @@ if [[ -z "$1" ]] ; then
   exit 1
 fi
 
+rm -rf lib/build
 mkdir -p lib/build
 cd lib/build
 

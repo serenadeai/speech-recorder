@@ -66,9 +66,18 @@ if(APPLE)
     )
 elseif(WIN32)
     list(APPEND LIBRARIES
-        portaudio_x86
         onnxruntime
     )
+
+    if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
+        list(APPEND LIBRARIES
+            portaudio_x86
+        )
+    else()
+        list(APPEND LIBRARIES
+            portaudio_x64
+        )
+    endif()
 else()
     list(APPEND LIBRARIES
         portaudio
@@ -92,9 +101,19 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${PROJECT_SOURCE_DIR}/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll"
             $<TARGET_FILE_DIR:main>
-
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${PROJECT_SOURCE_DIR}/3rd_party/portaudio/bin/portaudio_x86.dll"
-            $<TARGET_FILE_DIR:main>
     )
+
+    if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
+        add_custom_command(TARGET main POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${PROJECT_SOURCE_DIR}/3rd_party/portaudio/bin/portaudio_x86.dll"
+                $<TARGET_FILE_DIR:main>
+        )
+    else()
+        add_custom_command(TARGET main POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${PROJECT_SOURCE_DIR}/3rd_party/portaudio/bin/portaudio_x64.dll"
+                $<TARGET_FILE_DIR:main>
+        )
+    endif()
 endif()

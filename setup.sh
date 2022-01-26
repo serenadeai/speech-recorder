@@ -9,7 +9,7 @@ if [[ -z "$1" ]] ; then
   exit 1
 fi
 
-rm -rf tmp lib/3rd_party/portaudio lib/3rd_party/onnxruntime lib/3rd_party/vcruntime
+rm -rf tmp lib/3rd_party/portaudio lib/3rd_party/onnxruntime
 
 mkdir -p tmp/portaudio
 cd tmp/portaudio

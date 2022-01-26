@@ -10,5 +10,4 @@ dist
 node_modules
 lib/3rd_party/portaudio
 lib/3rd_party/onnxruntime
-lib/3rd_party/vcruntime
 prebuilds
