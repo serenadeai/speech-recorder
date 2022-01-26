@@ -65,14 +65,14 @@
                                     "<(module_root_dir)/lib/build/Release/speechrecorder.dll",
                                     "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime.dll",
                                     "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll",
-                                ]
+                                ],
                             }
                         ],
                         "libraries": [
                             "<(module_root_dir)/lib/build/Release/speechrecorder.lib",
                             "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime.lib",
                             "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.lib",
-                        ]
+                        ],
                     },
 		            'OS=="win" and target_arch=="ia32"',
 		            {
@@ -106,11 +106,7 @@
 		            },
                     'OS=="linux"',
                     {
-                        "link_settings": {
-                            "ldflags": [
-                                "-Wl,-rpath,'$$ORIGIN/'"
-                            ]
-                        },
+                        "link_settings": {"ldflags": ["-Wl,-rpath,'$$ORIGIN/'"]},
                         "copies": [
                             {
                                 "destination": "<(module_root_dir)/build/Release",
