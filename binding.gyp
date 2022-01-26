@@ -74,36 +74,36 @@
                             "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.lib",
                         ],
                     },
-		            'OS=="win" and target_arch=="ia32"',
-		            {
+                    'OS=="win" and target_arch=="ia32"',
+                    {
                         "copies": [
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
                                     "<(module_root_dir)/lib/3rd_party/portaudio/bin/portaudio_x86.dll",
                                     "<(module_root_dir)/lib/3rd_party/vcruntime/x86/vcruntime140.dll",
-                                ]
+                                ],
                             }
                         ],
                         "libraries": [
                             "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x86.lib",
-                        ]
-		            },
-		            'OS=="win" and target_arch=="x64"',
-		            {
+                        ],
+                    },
+                    'OS=="win" and target_arch=="x64"',
+                    {
                         "copies": [
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
                                     "<(module_root_dir)/lib/3rd_party/portaudio/bin/portaudio_x64.dll",
                                     "<(module_root_dir)/lib/3rd_party/vcruntime/x64/vcruntime140.dll",
-                                ]
+                                ],
                             }
                         ],
                         "libraries": [
                             "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x64.lib",
-                        ]
-		            },
+                        ],
+                    },
                     'OS=="linux"',
                     {
                         "link_settings": {"ldflags": ["-Wl,-rpath,'$$ORIGIN/'"]},
