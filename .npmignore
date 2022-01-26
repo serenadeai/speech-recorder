@@ -1,4 +1,1 @@
-build
-*.log
-*.raw
-*.wav
+lib
