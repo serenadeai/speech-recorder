@@ -51,6 +51,8 @@
                             "<(module_root_dir)/build/Release/libonnxruntime.1.10.0.dylib",
                         ],
                     },
+                ],
+                [
                     'OS=="win"',
                     {
                         "msvs_settings": {
@@ -74,6 +76,8 @@
                             "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.lib",
                         ],
                     },
+                ],
+                [
                     'OS=="win" and target_arch=="ia32"',
                     {
                         "copies": [
@@ -89,6 +93,8 @@
                             "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x86.lib",
                         ],
                     },
+                ],
+                [
                     'OS=="win" and target_arch=="x64"',
                     {
                         "copies": [
@@ -104,6 +110,8 @@
                             "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x64.lib",
                         ],
                     },
+                ],
+                [
                     'OS=="linux"',
                     {
                         "link_settings": {"ldflags": ["-Wl,-rpath,'$$ORIGIN/'"]},
