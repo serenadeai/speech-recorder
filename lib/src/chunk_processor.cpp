@@ -162,7 +162,7 @@ void ChunkProcessor::Process(short* input) {
   if (speaking_ &&
       consecutiveSilence_ == options_.consecutiveFramesForSilence) {
     speaking_ = false;
-    leadingBuffer_ = std::vector<short>();
+    leadingBuffer_.clear();
     if (options_.onChunkEnd != nullptr) {
       options_.onChunkEnd();
     }
@@ -173,11 +173,11 @@ void ChunkProcessor::Reset() {
   consecutiveSilence_ = 0;
   consecutiveSpeaking_ = 0;
   framesUntilSileroVad_ = 0;
-  leadingBuffer_ = std::vector<short>();
+  leadingBuffer_.clear();
   speaking_ = false;
   webrtcVad_.Reset();
-  webrtcVadBuffer_ = std::vector<short>();
-  webrtcVadResults_ = std::vector<bool>();
+  webrtcVadBuffer_.clear();
+  webrtcVadResults_.clear();
   short* audio;
   while (queue_.try_dequeue(audio)) {
   }
