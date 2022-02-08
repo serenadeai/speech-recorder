@@ -101,9 +101,7 @@ void ChunkProcessor::Process(short* input) {
   double probability = 0.0;
   if (speaking_ || webrtcVadResults_.size() != options_.webrtcVadResultsSize ||
       std::any_of(webrtcVadResults_.begin(), webrtcVadResults_.end(),
-                  [](bool e) {
-                    return e;
-                  })) {
+                  [](bool e) { return e; })) {
     if (framesUntilSileroVad_ == 0) {
       framesUntilSileroVad_ = options_.sileroVadRateLimit;
 
@@ -164,6 +162,7 @@ void ChunkProcessor::Process(short* input) {
   if (speaking_ &&
       consecutiveSilence_ == options_.consecutiveFramesForSilence) {
     speaking_ = false;
+    leadingBuffer_ = std::vector<short>();
     if (options_.onChunkEnd != nullptr) {
       options_.onChunkEnd();
     }
