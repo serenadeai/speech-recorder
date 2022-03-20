@@ -107,13 +107,25 @@ if (WIN32)
     install(
         FILES
             3rd_party/onnxruntime/lib/onnxruntime.dll
+            3rd_party/onnxruntime/lib/onnxruntime.lib
             3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll
+            3rd_party/onnxruntime/lib/onnxruntime_providers_shared.lib
         DESTINATION lib
     )
     if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
-        install(FILES 3rd_party/portaudio/bin/portaudio_x86.dll DESTINATION lib)
+        install(
+            FILES
+                3rd_party/portaudio/bin/portaudio_x86.dll
+                3rd_party/portaudio/lib/portaudio_x86.lib
+            DESTINATION lib
+        )
     else()
-        install(FILES 3rd_party/portaudio/bin/portaudio_x64.dll DESTINATION lib)
+        install(
+            FILES
+                3rd_party/portaudio/bin/portaudio_x64.dll
+                3rd_party/portaudio/lib/portaudio_x64.lib
+            DESTINATION lib
+        )
     endif()
 elseif(APPLE)
     install(
