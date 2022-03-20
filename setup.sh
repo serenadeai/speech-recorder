@@ -40,7 +40,9 @@ eval $portaudio_cmake
 cmake --build . --config Release
 cmake --install . --prefix ../install
 cp -r ../install ../../../../lib/3rd_party/portaudio
-chmod +x ../../../../lib/3rd_party/portaudio/lib/libportaudio.so
+if [[ `uname -s` == "Linux" ]] ; then
+  chmod +x ../../../../lib/3rd_party/portaudio/lib/libportaudio.so
+fi
 
 cd ../../..
 mkdir onnxruntime

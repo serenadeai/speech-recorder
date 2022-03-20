@@ -72,7 +72,7 @@ if(APPLE)
         "-framework CoreFoundation"
         "-framework CoreServices"
         portaudio
-        onnxruntime.1.10.0
+        onnxruntime
     )
 elseif(WIN32)
     list(APPEND LIBRARIES
@@ -118,6 +118,7 @@ if (WIN32)
 elseif(APPLE)
     install(
         FILES
+            3rd_party/onnxruntime/lib/libonnxruntime.dylib
             3rd_party/onnxruntime/lib/libonnxruntime.1.10.0.dylib
             3rd_party/portaudio/lib/libportaudio.dylib
         DESTINATION lib
