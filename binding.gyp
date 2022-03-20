@@ -39,9 +39,9 @@
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
-                                    "<(module_root_dir)/lib/build/libspeechrecorder.dylib",
-                                    "<(module_root_dir)/lib/3rd_party/portaudio/lib/libportaudio.dylib",
-                                    "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/libonnxruntime.1.10.0.dylib",
+                                    "<(module_root_dir)/lib/install/lib/libspeechrecorder.dylib",
+                                    "<(module_root_dir)/lib/install/lib/libportaudio.dylib",
+                                    "<(module_root_dir)/lib/install/lib/libonnxruntime.1.10.0.dylib",
                                 ],
                             }
                         ],
@@ -64,16 +64,16 @@
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
-                                    "<(module_root_dir)/lib/build/Release/speechrecorder.dll",
-                                    "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime.dll",
-                                    "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll",
+                                    "<(module_root_dir)/lib/install/lib/speechrecorder.dll",
+                                    "<(module_root_dir)/lib/install/lib/onnxruntime.dll",
+                                    "<(module_root_dir)/lib/install/lib/onnxruntime_providers_shared.dll",
                                 ],
                             }
                         ],
                         "libraries": [
-                            "<(module_root_dir)/lib/build/Release/speechrecorder.lib",
-                            "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime.lib",
-                            "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.lib",
+                            "<(module_root_dir)/lib/install/lib/speechrecorder.lib",
+                            "<(module_root_dir)/lib/install/lib/onnxruntime.lib",
+                            "<(module_root_dir)/lib/install/lib/onnxruntime_providers_shared.lib",
                         ],
                     },
                 ],
@@ -84,13 +84,13 @@
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
-                                    "<(module_root_dir)/lib/3rd_party/portaudio/bin/portaudio_x86.dll",
+                                    "<(module_root_dir)/lib/install/lib/portaudio_x86.dll",
                                     "<(module_root_dir)/lib/3rd_party/vcruntime/x86/vcruntime140.dll",
                                 ],
                             }
                         ],
                         "libraries": [
-                            "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x86.lib",
+                            "<(module_root_dir)/lib/install/lib/portaudio_x86.lib",
                         ],
                     },
                 ],
@@ -101,27 +101,31 @@
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
-                                    "<(module_root_dir)/lib/3rd_party/portaudio/bin/portaudio_x64.dll",
+                                    "<(module_root_dir)/lib/install/lib/portaudio_x64.dll",
                                     "<(module_root_dir)/lib/3rd_party/vcruntime/x64/vcruntime140.dll",
                                 ],
                             }
                         ],
                         "libraries": [
-                            "<(module_root_dir)/lib/3rd_party/portaudio/lib/portaudio_x64.lib",
+                            "<(module_root_dir)/lib/install/lib/portaudio_x64.lib",
                         ],
                     },
                 ],
                 [
                     'OS=="linux"',
                     {
-                        "link_settings": {"ldflags": ["-Wl,-rpath,'$$ORIGIN/'"]},
+                        "link_settings": {
+                            "libraries": [
+                                "-Wl,-rpath,'$$ORIGIN'",
+                            ]
+                        },
                         "copies": [
                             {
                                 "destination": "<(module_root_dir)/build/Release",
                                 "files": [
-                                    "<(module_root_dir)/lib/build/libspeechrecorder.so",
-                                    "<(module_root_dir)/lib/3rd_party/portaudio/lib/libportaudio.so",
-                                    "<(module_root_dir)/lib/3rd_party/onnxruntime/lib/libonnxruntime.so.1.10.0",
+                                    "<(module_root_dir)/lib/install/lib/libspeechrecorder.so",
+                                    "<(module_root_dir)/lib/install/lib/libportaudio.so",
+                                    "<(module_root_dir)/lib/install/lib/libonnxruntime.so.1.10.0",
                                 ],
                             }
                         ],

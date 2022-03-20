@@ -4,7 +4,16 @@ project(speechrecorder)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-include(FetchContent)
+
+if(APPLE OR NOT WIN32)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+
+if(APPLE)
+    set(MACOSX_RPATH TRUE)
+elseif(NOT WIN32)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/")
+endif()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
@@ -18,6 +27,7 @@ else()
     )
 endif()
 
+include(FetchContent)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 FetchContent_Declare(drwav
@@ -92,28 +102,32 @@ target_link_libraries(speechrecorder ${LIBRARIES})
 add_executable(main test/main.cpp)
 target_link_libraries(main speechrecorder)
 
-if(WIN32)
-    add_custom_command(TARGET main POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${PROJECT_SOURCE_DIR}/3rd_party/onnxruntime/lib/onnxruntime.dll"
-            $<TARGET_FILE_DIR:main>
-
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${PROJECT_SOURCE_DIR}/3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll"
-            $<TARGET_FILE_DIR:main>
+install(TARGETS speechrecorder DESTINATION lib)
+if (WIN32)
+    install(
+        FILES
+            3rd_party/onnxruntime/lib/onnxruntime.dll
+            3rd_party/onnxruntime/lib/onnxruntime_providers_shared.dll
+        DESTINATION lib
     )
-
     if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
-        add_custom_command(TARGET main POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${PROJECT_SOURCE_DIR}/3rd_party/portaudio/bin/portaudio_x86.dll"
-                $<TARGET_FILE_DIR:main>
-        )
+        install(FILES 3rd_party/portaudio/bin/portaudio_x86.dll DESTINATION lib)
     else()
-        add_custom_command(TARGET main POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${PROJECT_SOURCE_DIR}/3rd_party/portaudio/bin/portaudio_x64.dll"
-                $<TARGET_FILE_DIR:main>
-        )
+        install(FILES 3rd_party/portaudio/bin/portaudio_x64.dll DESTINATION lib)
     endif()
+elseif(APPLE)
+    install(
+        FILES
+            3rd_party/onnxruntime/lib/libonnxruntime.1.10.0.dylib
+            3rd_party/portaudio/lib/libportaudio.dylib
+        DESTINATION lib
+    )
+else()
+    install(
+        FILES
+            3rd_party/onnxruntime/lib/libonnxruntime.so
+            3rd_party/onnxruntime/lib/libonnxruntime.so.1.10.0
+            3rd_party/portaudio/lib/libportaudio.so
+        DESTINATION lib
+    )
 endif()
