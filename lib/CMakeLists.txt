@@ -5,13 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-if(APPLE OR NOT WIN32)
+if(NOT APPLE AND NOT WIN32)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-endif()
-
-if(APPLE)
-    set(MACOSX_RPATH TRUE)
-elseif(NOT WIN32)
     set(CMAKE_INSTALL_RPATH "$ORIGIN/")
 endif()
 
@@ -72,7 +67,7 @@ if(APPLE)
         "-framework CoreFoundation"
         "-framework CoreServices"
         portaudio
-        onnxruntime
+        onnxruntime.1.10.0
     )
 elseif(WIN32)
     list(APPEND LIBRARIES
@@ -130,9 +125,12 @@ if (WIN32)
 elseif(APPLE)
     install(
         FILES
-            3rd_party/onnxruntime/lib/libonnxruntime.dylib
             3rd_party/onnxruntime/lib/libonnxruntime.1.10.0.dylib
             3rd_party/portaudio/lib/libportaudio.dylib
+        PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
         DESTINATION lib
     )
 else()
@@ -141,6 +139,10 @@ else()
             3rd_party/onnxruntime/lib/libonnxruntime.so
             3rd_party/onnxruntime/lib/libonnxruntime.so.1.10.0
             3rd_party/portaudio/lib/libportaudio.so
+        PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
         DESTINATION lib
     )
 endif()

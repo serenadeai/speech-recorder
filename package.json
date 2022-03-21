@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "bash build.sh",
-    "clean": "rm -rf build prebuilds lib/build",
+    "clean": "rm -rf build prebuilds lib/build lib/install",
     "install": "prebuild-install -r napi || node-gyp rebuild"
   },
   "dependencies": {
