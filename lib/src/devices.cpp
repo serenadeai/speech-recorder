@@ -14,15 +14,21 @@ std::vector<Device> GetDevices() {
   int count = Pa_GetDeviceCount();
   for (int i = 0; i < count; i++) {
     const PaDeviceInfo* info = Pa_GetDeviceInfo(i);
-    Device device = {i,
-                     info->name,
-                     Pa_GetHostApiInfo(info->hostApi)->name,
-                     info->maxInputChannels,
-                     info->maxOutputChannels,
-                     info->defaultSampleRate,
-                     i == Pa_GetDefaultInputDevice(),
-                     i == Pa_GetDefaultOutputDevice()};
-    result.push_back(device);
+    bool include = info->maxInputChannels > 0;
+
+#ifdef WIN32
+    if (strcmp(Pa_GetHostApiInfo(info->hostApi)->name, "MME") != 0) {
+      include = false;
+    }
+#endif
+
+    if (include) {
+      result.emplace_back(i, info->name, Pa_GetHostApiInfo(info->hostApi)->name,
+                          info->maxInputChannels, info->maxOutputChannels,
+                          info->defaultSampleRate,
+                          i == Pa_GetDefaultInputDevice(),
+                          i == Pa_GetDefaultOutputDevice());
+    }
   }
 
   return result;

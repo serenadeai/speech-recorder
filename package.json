@@ -1,6 +1,6 @@
 {
   "name": "speech-recorder",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "A node.js library for streaming audio and speech from the microphone.",
   "main": "src/index.js",
   "repository": "https://github.com/serenadeai/speech-recorder",
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "bash build.sh",
-    "clean": "rm -rf build prebuilds lib/build",
+    "clean": "rm -rf build prebuilds lib/build lib/install",
     "install": "prebuild-install -r napi || node-gyp rebuild"
   },
   "dependencies": {

@@ -20,7 +20,7 @@ cd portaudio
 mkdir dist install
 cd dist
 
-portaudio_cmake="cmake -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14"
+portaudio_cmake="cmake"
 if [[ `uname -s` == "MINGW"* ]] ; then
   if [[ "$1" == "x86" ]] ; then
     portaudio_cmake+=" -A Win32"
@@ -28,6 +28,7 @@ if [[ `uname -s` == "MINGW"* ]] ; then
     portaudio_cmake+=" -A x64"
   fi
 elif [[ `uname -s` == "Darwin" ]] ; then
+  portaudio_cmake+=" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14"
   if [[ "$1" == "x64" ]] ; then
     portaudio_cmake+=" -DCMAKE_OSX_ARCHITECTURES=x86_64"
   elif [[ "$1" == "arm64" ]] ; then
@@ -38,7 +39,7 @@ fi
 portaudio_cmake+=" .."
 eval $portaudio_cmake
 cmake --build . --config Release
-cmake --install .
+cmake --install . --prefix ../install
 cp -r ../install ../../../../lib/3rd_party/portaudio
 
 cd ../../..

@@ -1,3 +1,3 @@
-const { devices } = require("../src/index.js");
+const { devices } = require("../src/index");
 
 console.log(devices());

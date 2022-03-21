@@ -9,7 +9,7 @@ if [[ -z "$1" ]] ; then
   exit 1
 fi
 
-rm -rf lib/build
+rm -rf lib/build lib/install
 mkdir -p lib/build
 cd lib/build
 
@@ -30,6 +30,7 @@ else
 fi
 
 cmake --build . --config Release
+cmake --install . --prefix ../install
 
 cd ../..
 rm -rf prebuilds
@@ -41,7 +42,7 @@ fi
 
 eval "npm_config_arch=$node_arch ./node_modules/.bin/node-gyp rebuild"
 
-prebuild_command="./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so)$' --arch=$node_arch"
+prebuild_command="./node_modules/.bin/prebuild -r napi --include-regex '.(node|a|dylib|dll|so.*)$' --arch=$node_arch"
 if [[ -n "$2" ]] ; then
   prebuild_command+=" --upload $2"
 fi
