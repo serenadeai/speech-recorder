@@ -1,6 +1,6 @@
 {
   "name": "speech-recorder",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "A node.js library for streaming audio and speech from the microphone.",
   "main": "src/index.js",
   "repository": "https://github.com/serenadeai/speech-recorder",

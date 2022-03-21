@@ -6,3 +6,4 @@ lib/CMakeLists.txt
 lib/include
 lib/src
 lib/test
+lib/install
