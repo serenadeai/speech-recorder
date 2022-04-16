@@ -14,6 +14,25 @@
 #define DR_WAV_IMPLEMENTATION
 #include "dr_wav.h"
 
+speechrecorder::ChunkProcessorOptions GetChunkProcessorOptions(
+    const Napi::Object& options) {
+  return {
+      options.Get("consecutiveFramesForSilence")
+          .As<Napi::Number>()
+          .Int32Value(),
+      options.Get("consecutiveFramesForSpeaking")
+          .As<Napi::Number>()
+          .Int32Value(),
+      options.Get("leadingBufferFrames").As<Napi::Number>().Int32Value(),
+      options.Get("sileroVadBufferSize").As<Napi::Number>().Int32Value(),
+      options.Get("sileroVadSilenceThreshold").As<Napi::Number>().DoubleValue(),
+      options.Get("sileroVadSpeakingThreshold")
+          .As<Napi::Number>()
+          .DoubleValue(),
+      options.Get("webrtcVadBufferSize").As<Napi::Number>().Int32Value(),
+      options.Get("webrtcVadResultsSize").As<Napi::Number>().Int32Value()};
+}
+
 Napi::Object SpeechRecorder::Init(Napi::Env env, Napi::Object exports) {
   Napi::Function f = DefineClass(
       env, "SpeechRecorder",
@@ -21,6 +40,9 @@ Napi::Object SpeechRecorder::Init(Napi::Env env, Napi::Object exports) {
           InstanceMethod<&SpeechRecorder::ProcessFile>(
               "processFile", static_cast<napi_property_attributes>(
                                  napi_writable | napi_configurable)),
+          InstanceMethod<&SpeechRecorder::SetOptions>(
+              "setOptions", static_cast<napi_property_attributes>(
+                                napi_writable | napi_configurable)),
           InstanceMethod<&SpeechRecorder::Start>(
               "start", static_cast<napi_property_attributes>(
                            napi_writable | napi_configurable)),
@@ -69,27 +91,13 @@ SpeechRecorder::SpeechRecorder(const Napi::CallbackInfo& info)
         delete data;
       }),
       modelPath_(info[0].As<Napi::String>().Utf8Value()),
-      options_({
-          info[2]
-              .As<Napi::Object>()
-              .Get("consecutiveFramesForSilence")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("consecutiveFramesForSpeaking")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("device")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("leadingBufferFrames")
-              .As<Napi::Number>()
-              .Int32Value(),
+      device_(info[2].As<Napi::Number>().Int32Value()),
+      sampleRate_(info[3].As<Napi::Number>().Int32Value()),
+      samplesPerFrame_(info[4].As<Napi::Number>().Int32Value()),
+      webrtcVadLevel_(info[5].As<Napi::Number>().Int32Value()),
+      options_(GetChunkProcessorOptions(info[6].As<Napi::Object>())),
+      processor_(
+          modelPath_, device_, sampleRate_, samplesPerFrame_, webrtcVadLevel_,
           [&](std::vector<short> audio) {
             SpeechRecorderCallbackData* data = new SpeechRecorderCallbackData();
             data->event = "chunkStart";
@@ -113,53 +121,7 @@ SpeechRecorder::SpeechRecorder(const Napi::CallbackInfo& info)
             data->event = "chunkEnd";
             queue_.enqueue(data);
           },
-          info[2]
-              .As<Napi::Object>()
-              .Get("samplesPerFrame")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("sampleRate")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("sileroVadBufferSize")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("sileroVadRateLimit")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("sileroVadSilenceThreshold")
-              .As<Napi::Number>()
-              .DoubleValue(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("sileroVadSpeakingThreshold")
-              .As<Napi::Number>()
-              .DoubleValue(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("webrtcVadLevel")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("webrtcVadBufferSize")
-              .As<Napi::Number>()
-              .Int32Value(),
-          info[2]
-              .As<Napi::Object>()
-              .Get("webrtcVadResultsSize")
-              .As<Napi::Number>()
-              .Int32Value(),
-      }),
-      processor_(modelPath_, options_) {}
+          options_) {}
 
 void SpeechRecorder::ProcessFile(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
@@ -169,50 +131,44 @@ void SpeechRecorder::ProcessFile(const Napi::CallbackInfo& info) {
   // silero model is expensive, so lazily create this instance only if this
   // method is actually called (which is probably not common)
   if (!processFileProcessor_) {
-    speechrecorder::ChunkProcessorOptions options = options_;
+    processFileProcessor_ = std::make_unique<speechrecorder::ChunkProcessor>(
+        modelPath_, device_, sampleRate_, samplesPerFrame_, webrtcVadLevel_,
+        [&](std::vector<short> audio) {
+          Napi::Object object = Napi::Object::New(env);
+          if (audio.size() > 0) {
+            Napi::Int16Array buffer = Napi::Int16Array::New(env, audio.size());
+            for (size_t i = 0; i < audio.size(); i++) {
+              buffer[i] = audio[i];
+            }
 
-    options.onChunkStart = [&](std::vector<short> audio) {
-      Napi::Object object = Napi::Object::New(env);
-      if (audio.size() > 0) {
-        Napi::Int16Array buffer = Napi::Int16Array::New(env, audio.size());
-        for (size_t i = 0; i < audio.size(); i++) {
-          buffer[i] = audio[i];
-        }
+            object.Set("audio", buffer);
+          }
 
-        object.Set("audio", buffer);
-      }
+          callback_.Value().Call(
+              {Napi::String::New(env, "chunkStart"), object});
+        },
+        [&](std::vector<short> audio, bool speaking, double volume, bool speech,
+            double probability, int consecutiveSilence) {
+          Napi::Object object = Napi::Object::New(env);
+          object.Set("speaking", Napi::Boolean::New(env, speaking));
+          object.Set("volume", Napi::Number::New(env, volume));
+          object.Set("speech", Napi::Boolean::New(env, speech));
+          object.Set("probability", Napi::Number::New(env, probability));
+          object.Set("consecutiveSilence",
+                     Napi::Number::New(env, (double)consecutiveSilence));
 
-      callback_.Value().Call({Napi::String::New(env, "chunkStart"), object});
-    };
+          if (audio.size() > 0) {
+            Napi::Int16Array buffer = Napi::Int16Array::New(env, audio.size());
+            for (size_t i = 0; i < audio.size(); i++) {
+              buffer[i] = audio[i];
+            }
 
-    options.onAudio = [&](std::vector<short> audio, bool speaking,
-                          double volume, bool speech, double probability,
-                          int consecutiveSilence) {
-      Napi::Object object = Napi::Object::New(env);
-      object.Set("speaking", Napi::Boolean::New(env, speaking));
-      object.Set("volume", Napi::Number::New(env, volume));
-      object.Set("speech", Napi::Boolean::New(env, speech));
-      object.Set("probability", Napi::Number::New(env, probability));
-      object.Set("consecutiveSilence",
-                 Napi::Number::New(env, (double)consecutiveSilence));
-
-      if (audio.size() > 0) {
-        Napi::Int16Array buffer = Napi::Int16Array::New(env, audio.size());
-        for (size_t i = 0; i < audio.size(); i++) {
-          buffer[i] = audio[i];
-        }
-
-        object.Set("audio", buffer);
-        callback_.Value().Call({Napi::String::New(env, "audio"), object});
-      }
-    };
-
-    options.onChunkEnd = [&] {
-      callback_.Value().Call({Napi::String::New(env, "chunkEnd")});
-    };
-
-    processFileProcessor_ =
-        std::make_unique<speechrecorder::ChunkProcessor>(modelPath_, options);
+            object.Set("audio", buffer);
+            callback_.Value().Call({Napi::String::New(env, "audio"), object});
+          }
+        },
+        [&] { callback_.Value().Call({Napi::String::New(env, "chunkEnd")}); },
+        options_);
   }
 
   unsigned int channels;
@@ -223,15 +179,15 @@ void SpeechRecorder::ProcessFile(const Napi::CallbackInfo& info) {
 
   processFileProcessor_->Reset();
   int size = (int)frames;
-  for (int i = 0; i < size; i += options_.samplesPerFrame) {
+  for (int i = 0; i < size; i += samplesPerFrame_) {
     std::vector<short> buffer;
-    for (int j = 0; j < options_.samplesPerFrame; j++) {
+    for (int j = 0; j < samplesPerFrame_; j++) {
       if (i + j < size) {
         buffer.push_back(data[i + j]);
       }
     }
 
-    if (buffer.size() == (size_t)options_.samplesPerFrame) {
+    if (buffer.size() == (size_t)samplesPerFrame_) {
       processFileProcessor_->Process(buffer.data());
     }
   }
@@ -239,13 +195,15 @@ void SpeechRecorder::ProcessFile(const Napi::CallbackInfo& info) {
   drwav_free(data, nullptr);
 }
 
+void SpeechRecorder::SetOptions(const Napi::CallbackInfo& info) {
+  processor_.options_ = GetChunkProcessorOptions(info[0].As<Napi::Object>());
+}
+
 void SpeechRecorder::Start(const Napi::CallbackInfo& info) {
   stopped_ = false;
   threadSafeFunction_ = Napi::ThreadSafeFunction::New(
       info.Env(), callback_.Value(), "Speech Recorder Start", 0, 1,
-      [&](Napi::Env env) {
-        thread_.join();
-      });
+      [&](Napi::Env env) { thread_.join(); });
 
   thread_ = std::thread([&] {
     while (!stopped_) {

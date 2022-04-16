@@ -85,8 +85,7 @@ You can get a list of supported devices with:
 * `onChunkEnd`: Callback to be executed when speech ends.
 * `samplesPerFrame`: How many audio samples to be included in each frame from the microphone. Default `480`.
 * `sampleRate`: Audio sample rate. Default `16000`.
-* `sileroVadBufferSize`: How many audio samples to pass to the VAD. Default `2000`.
-* `sileroVadRateLimit`: Rate limit, in frames, for how frequently to call the VAD. Default `3`.
+* `sileroVadBufferSize`: How many audio samples to pass to the VAD. Default `480`.
 * `sileroVadSilenceThreshold`: Probability threshold for speech to transition to silence. Default `0.1`.
 * `sileroVadSpeakingThreshold`: Probability threshold for silence to transition to speech. Default `0.3`.
 * `webrtcVadLevel`: Aggressiveness for the first-pass VAD filter. `0` is least aggressive, and `3` is most aggressive. Default `3`.

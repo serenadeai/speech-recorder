@@ -20,11 +20,9 @@ class Wrapper {
     options.samplesPerFrame = options.samplesPerFrame !== undefined ? options.samplesPerFrame : 480;
     options.sampleRate = options.sampleRate !== undefined ? options.sampleRate : 16000;
     options.sileroVadBufferSize =
-      options.sileroVadBufferSize !== undefined ? options.sileroVadBufferSize : 2000;
-    options.sileroVadRateLimit =
-      options.sileroVadRateLimit !== undefined ? options.sileroVadRateLimit : 3;
+      options.sileroVadBufferSize !== undefined ? options.sileroVadBufferSize : 480;
     options.sileroVadSilenceThreshold =
-      options.sileroVadSilenceThreshold !== undefined ? options.sileroVadSilenceThreshold : 0.1;
+      options.sileroVadSilenceThreshold !== undefined ? options.sileroVadSilenceThreshold : 0.3;
     options.sileroVadSpeakingThreshold =
       options.sileroVadSpeakingThreshold !== undefined ? options.sileroVadSpeakingThreshold : 0.3;
     options.webrtcVadLevel = options.webrtcVadLevel !== undefined ? options.webrtcVadLevel : 3;
@@ -33,6 +31,7 @@ class Wrapper {
     options.webrtcVadResultsSize =
       options.webrtcVadResultsSize !== undefined ? options.webrtcVadResultsSize : 10;
 
+    this.options = options;
     this.inner = new SpeechRecorder(
       model !== undefined ? model : path.join(__dirname, "..", "lib", "resources", "vad.onnx"),
       (event, data) => {
@@ -51,12 +50,21 @@ class Wrapper {
           options.onChunkEnd();
         }
       },
+      options.device,
+      options.sampleRate,
+      options.samplesPerFrame,
+      options.webrtcVadLevel,
       options
     );
   }
 
   processFile(file) {
     this.inner.processFile(path.resolve(file));
+  }
+
+  setOptions(options) {
+    this.options = { ...this.options, options };
+    this.inner.setOptions(this.options);
   }
 
   start() {
