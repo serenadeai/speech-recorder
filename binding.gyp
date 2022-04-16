@@ -55,10 +55,16 @@
                 [
                     'OS=="win"',
                     {
-                        "msvs_settings": {
-                            "VCCLCompilerTool": {
-                                "ExceptionHandling": 1,
-                            },
+                        "configurations": {
+                            "Release": {
+                                "msvs_settings": {
+                                    "VCCLCompilerTool": {
+                                        "RuntimeTypeInfo": "true",
+                                        "RuntimeLibrary": 0,
+                                        "ExceptionHandling": 1,
+                                    }
+                                }
+                            }
                         },
                         "copies": [
                             {
