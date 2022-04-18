@@ -6,7 +6,7 @@ This module is used for speech recognition in [Serenade](https://serenade.ai). S
 
 ## Installation
 
-speech-recorder has been tested on Windows 10, macOS 10.14+, and Ubuntu 18.04+ (and may work on other platforms as well).
+speech-recorder has been tested on Windows 10+, macOS 11+, and Ubuntu 20.04+ (and may work on other platforms as well).
 
 To install speech-recorder, run:
 
