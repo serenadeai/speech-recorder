@@ -103,6 +103,7 @@
                                 "files": [
                                     "<(module_root_dir)/lib/install/lib/portaudio_x64.dll",
                                     "<(module_root_dir)/lib/3rd_party/vcruntime/x64/vcruntime140.dll",
+                                    "<(module_root_dir)/lib/3rd_party/vcruntime/x64/vcruntime140_1.dll",
                                 ],
                             }
                         ],
