@@ -9,6 +9,7 @@
 
 namespace speechrecorder {
 
+static std::mutex ortMutex_;
 static std::unique_ptr<Ort::Env> ortEnv_;
 static std::unique_ptr<Ort::MemoryInfo> ortMemory_;
 static std::unique_ptr<Ort::Session> ortSession_;
@@ -21,23 +22,52 @@ ChunkProcessor::ChunkProcessor(std::string modelPath,
       microphone_(options.device, options.samplesPerFrame, options.sampleRate,
                   &queue_),
       webrtcVad_(options.webrtcVadLevel, options.sampleRate) {
-  if (!ortSession_) {
-    ortEnv_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING,
-                                         "SpeechRecorder::ChunkProcessor");
-    ortMemory_ = std::make_unique<Ort::MemoryInfo>(Ort::MemoryInfo::CreateCpu(
-        OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault));
+  queueThread_ = std::thread([&, modelPath] {
+    ortMutex_.lock();
+    if (!ortSession_) {
+      ortEnv_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING,
+                                           "SpeechRecorder::ChunkProcessor");
+      ortMemory_ = std::make_unique<Ort::MemoryInfo>(Ort::MemoryInfo::CreateCpu(
+          OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault));
 
-    Ort::SessionOptions sessionOptions;
-    sessionOptions.SetIntraOpNumThreads(1);
+      Ort::SessionOptions sessionOptions;
+      sessionOptions.SetIntraOpNumThreads(1);
 #ifdef _WIN32
-    std::wstring wstring(modelPath.begin(), modelPath.end());
-    ortSession_ = std::make_unique<Ort::Session>(*ortEnv_, wstring.c_str(),
-                                                 sessionOptions);
+      std::wstring wstring(modelPath.begin(), modelPath.end());
+      ortSession_ = std::make_unique<Ort::Session>(*ortEnv_, wstring.c_str(),
+                                                   sessionOptions);
 
 #else
-    ortSession_ = std::make_unique<Ort::Session>(*ortEnv_, modelPath.c_str(),
-                                                 sessionOptions);
+      ortSession_ = std::make_unique<Ort::Session>(*ortEnv_, modelPath.c_str(),
+                                                   sessionOptions);
 #endif
+    }
+    ortMutex_.unlock();
+    while (true) {
+      short* audio;
+      queue_.wait_dequeue(audio);
+      // null pointer means the destructor wants us to stop the thread.
+      if (audio == nullptr) {
+        return;
+      }
+      if (!stopped_) {
+        Process(audio);
+      }
+    }
+  });
+}
+
+ChunkProcessor::~ChunkProcessor() {
+  // shutdown the queue thread.
+  stopped_ = true;
+  queue_.enqueue(nullptr); 
+  queueThread_.join();
+
+  if (stopThread_.joinable()) {
+    stopThread_.join();
+  }
+  if (startThread_.joinable()) {
+    startThread_.join();
   }
 }
 
@@ -184,30 +214,22 @@ void ChunkProcessor::Reset() {
 }
 
 void ChunkProcessor::Start() {
-  Reset();
-
-  stopped_ = false;
-  microphone_.Start();
-  thread_ = std::thread([&] {
-    while (!stopped_) {
-      short* audio;
-      bool element = queue_.try_dequeue(audio);
-      if (element) {
-        Process(audio);
-      }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+  toggleLock_.lock();
+  startThread_ = std::thread([&] {
+    Reset();
+    microphone_.Start();
+    stopped_ = false;
+    toggleLock_.unlock();
   });
 }
 
 void ChunkProcessor::Stop() {
-  stopped_ = true;
-  microphone_.Stop();
-
-  if (thread_.joinable()) {
-    thread_.join();
-  }
+  toggleLock_.lock();
+  stopThread_ = std::thread([&] {
+    stopped_ = true;
+    microphone_.Stop();
+    toggleLock_.unlock();
+  });
 }
 
 }  // namespace speechrecorder
