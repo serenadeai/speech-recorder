@@ -46,7 +46,10 @@ class ChunkProcessor {
   double sileroVadProbability_ = 0.0;
   bool speaking_ = false;
   std::atomic<bool> stopped_;
-  std::thread thread_;
+  std::mutex toggleLock_;
+  std::thread startThread_;
+  std::thread stopThread_;
+  std::thread queueThread_;
   WebrtcVad webrtcVad_;
   std::vector<short> webrtcVadBuffer_;
   std::vector<bool> webrtcVadResults_;
@@ -54,6 +57,7 @@ class ChunkProcessor {
  public:
   ChunkProcessorOptions options_;
   ChunkProcessor(std::string modelPath, ChunkProcessorOptions options);
+  ~ChunkProcessor();
   void Process(short* audio);
   void Reset();
   void Start();
