@@ -34,7 +34,7 @@ class Wrapper {
       options.webrtcVadResultsSize !== undefined ? options.webrtcVadResultsSize : 10;
 
     this.inner = new SpeechRecorder(
-      model !== undefined ? model : path.join(__dirname, "..", "lib", "resources", "vad.onnx"),
+      model !== undefined ? model : path.join(__dirname, "..", "lib", "resources", "vad.onnx").replace('app.asar', 'app.asar.unpacked'),
       (event, data) => {
         if (event == "chunkStart") {
           options.onChunkStart({ audio: data.audio });
