@@ -79,6 +79,7 @@ You can get a list of supported devices with:
 
 * `consecutiveFramesForSilence`: How many frames of audio must be silent before `onChunkEnd` is fired. Default `10`.
 * `consecutiveFramesForSpeaking`: How many frames of audio must be speech before `onChunkStart` is fired. Default `1`.
+* `device`: ID of the device to use for input (i.e., from the example above). Specify `-1` to use the system default. Default `-1`.
 * `leadingBufferFrames`: How many frames of audio to keep in a buffer that's included in `onChunkStart`. Default `10`.
 * `onChunkStart`: Callback to be executed when speech starts.
 * `onAudio`: Callback to be executed when any audio comes in.
