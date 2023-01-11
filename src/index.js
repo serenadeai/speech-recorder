@@ -4,6 +4,7 @@ const { SpeechRecorder, devices } = require("bindings")("speechrecorder.node");
 class Wrapper {
   constructor(options, model) {
     options = options ? options : {};
+    options.asar = options.asar !== undefined ? options.asar : false;
     options.consecutiveFramesForSilence =
       options.consecutiveFramesForSilence !== undefined ? options.consecutiveFramesForSilence : 10;
     options.consecutiveFramesForSpeaking =
@@ -33,8 +34,11 @@ class Wrapper {
     options.webrtcVadResultsSize =
       options.webrtcVadResultsSize !== undefined ? options.webrtcVadResultsSize : 10;
 
+    let defaultModelPath = path.join(__dirname, "..", "lib", "resources", "vad.onnx");
+    if (options.asar) defaultModelPath = defaultModelPath.replace('app.asar', 'app.asar.unpacked');
+
     this.inner = new SpeechRecorder(
-      model !== undefined ? model : path.join(__dirname, "..", "lib", "resources", "vad.onnx"),
+      model !== undefined ? model : defaultModelPath,
       (event, data) => {
         if (event == "chunkStart") {
           options.onChunkStart({ audio: data.audio });
