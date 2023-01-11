@@ -77,6 +77,7 @@ You can get a list of supported devices with:
 
 ### Options
 
+* `asar`: For electron applications, whether asar archiving is enabled or not. Default `false`.
 * `consecutiveFramesForSilence`: How many frames of audio must be silent before `onChunkEnd` is fired. Default `10`.
 * `consecutiveFramesForSpeaking`: How many frames of audio must be speech before `onChunkStart` is fired. Default `1`.
 * `leadingBufferFrames`: How many frames of audio to keep in a buffer that's included in `onChunkStart`. Default `10`.
