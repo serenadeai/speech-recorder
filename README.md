@@ -105,3 +105,24 @@ Where `<arch>` specifies the architecture you'd like to build for and is one of 
 Then, you can build speech-recorder with:
 
     ./build.sh <arch>
+
+## Examples
+
+### C++
+
+Build locally (e.g, `./setup.sh x64 && ./build.sh x64`), then:
+
+```
+./lib/build/main lib/resources/vad.onnx
+```
+
+### JavaScript
+
+Install the package first (e.g, `yarn install speech-recorder`), then:
+
+```
+node ./examples/analyze-files.js /path/to/wav/files /path/to/labels
+node ./examples/devices.js
+node ./examples/live.js
+node ./examples/record.js output.wav
+```
