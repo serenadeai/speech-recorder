@@ -1,3 +1,5 @@
 const { devices } = require("../src/index");
 
-console.log(devices());
+setInterval(() => {
+    console.log(devices());
+}, 5000);

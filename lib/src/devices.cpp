@@ -30,6 +30,7 @@ std::vector<Device> GetDevices() {
                           i == Pa_GetDefaultOutputDevice());
     }
   }
+  Pa_Terminate();
 
   return result;
 }
